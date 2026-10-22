@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
-"""To-Do-Bot: Telegram (Text oder Sprachnachricht) -> Trello-Karten.
+"""To-Do-Bot: Telegram (Text oder Sprachnachricht) -> eigene To-Do-App + Erinnerungen.
 
 Ablauf: Nachricht kommt an -> bei Sprache wird sie in Text umgewandelt (Google Gemini)
--> Claude sortiert in Karten + passende Liste + Datum -> Karten landen in Trello.
+-> Claude sortiert in To-Dos + passende Kategorie + Datum -> To-Dos landen in der App.
+Die App (Ordner docs/) und der Bot teilen sich eine geheime GitHub-Gist-Datei (todos.json).
+Faellige Erinnerungen schickt der Bot als Telegram-Nachricht mit Tasten (Erledigt / Spaeter).
 Keine Schluessel im Code: alles kommt aus Umgebungsvariablen (.env lokal, Variablen in der Cloud).
 """
 import base64
 import json
 import os
 import re
+import secrets
 import sys
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 import requests
@@ -19,9 +22,8 @@ import requests
 # --- Einstellungen (aus Umgebungsvariablen) ---------------------------------
 TG_TOKEN = os.environ.get("TELEGRAM_TOKEN", "")
 TG_CHAT = os.environ.get("TELEGRAM_CHAT_ID", "").strip()
-TRELLO_KEY = os.environ.get("TRELLO_KEY", "")
-TRELLO_TOKEN = os.environ.get("TRELLO_TOKEN", "")
-BOARD = os.environ.get("TRELLO_BOARD", "CvKnA1Yo")  # Franny's To-Do's
+GIST_TOKEN = os.environ.get("GIST_TOKEN", "")
+GIST_ID = os.environ.get("TODO_GIST_ID", "").strip()
 ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "")  # bevorzugtes Modell, sonst automatisch das neueste Flash-Modell
@@ -29,26 +31,95 @@ MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
 TZ = ZoneInfo(os.environ.get("TIMEZONE", "Europe/Vienna"))
 
 TG = f"https://api.telegram.org/bot{TG_TOKEN}"
-TRELLO = "https://api.trello.com/1"
+GH = "https://api.github.com"
+FILE = "todos.json"
+
+# Gleiche Kategorien wie in der App (docs/app.js)
+CATEGORIES = [
+    {"id": "sunny", "name": "Sunny", "emoji": "🎀", "area": "Privat"},
+    {"id": "franny", "name": "Franny", "emoji": "🩷", "area": "Privat"},
+    {"id": "slb", "name": "School-Life-Balance", "emoji": "🎓", "area": "Business"},
+    {"id": "miller", "name": "Michelle Miller", "emoji": "🏚️", "area": "Business"},
+    {"id": "wagner", "name": "Markus Wagner", "emoji": "🏡", "area": "Business"},
+]
+CAT = {c["id"]: c for c in CATEGORIES}
 
 
+def cat_label(cat_id):
+    c = CAT.get(cat_id)
+    return f"{c['emoji']} {c['name']}" if c else "📥 Eingang"
+
+
+# --- Telegram ----------------------------------------------------------------
 def tg_send(chat_id, text, buttons=None):
     body = {"chat_id": chat_id, "text": text}
     if buttons:
         body["reply_markup"] = {"inline_keyboard": buttons}
-    requests.post(f"{TG}/sendMessage", json=body, timeout=30)
+    return requests.post(f"{TG}/sendMessage", json=body, timeout=30).json()
 
 
-def trello_lists():
-    r = requests.get(
-        f"{TRELLO}/boards/{BOARD}/lists",
-        params={"key": TRELLO_KEY, "token": TRELLO_TOKEN, "fields": "name"},
-        timeout=30,
-    )
+def tg_edit(chat_id, message_id, text):
+    requests.post(f"{TG}/editMessageText",
+                  json={"chat_id": chat_id, "message_id": message_id, "text": text}, timeout=30)
+
+
+# --- Speicher (geheime Gist) ---------------------------------------------------
+def load():
+    r = requests.get(f"{GH}/gists/{GIST_ID}", headers=gh_headers(), timeout=30)
     r.raise_for_status()
-    return r.json()  # [{id, name}]
+    f = r.json()["files"].get(FILE)
+    if not f:
+        return {"version": 1, "todos": []}
+    content = f["content"] if not f.get("truncated") else requests.get(f["raw_url"], timeout=30).text
+    data = json.loads(content or "{}")
+    data.setdefault("todos", [])
+    return data
 
 
+def save(data):
+    r = requests.patch(f"{GH}/gists/{GIST_ID}", headers=gh_headers(), timeout=30,
+                       json={"files": {FILE: {"content": json.dumps(data, ensure_ascii=False, indent=1)}}})
+    r.raise_for_status()
+
+
+def gh_headers():
+    return {"Authorization": f"Bearer {GIST_TOKEN}", "Accept": "application/vnd.github+json"}
+
+
+def now_ms():
+    return int(time.time() * 1000)
+
+
+def utc_iso(dt):
+    return dt.astimezone(ZoneInfo("UTC")).strftime("%Y-%m-%dT%H:%M:%S.000Z")
+
+
+def due_local(due):
+    """'YYYY-MM-DD' (ganztags = 09:00) oder 'YYYY-MM-DDTHH:MM' -> datetime in TZ."""
+    if len(due) == 10:
+        due += "T09:00"
+    return datetime.fromisoformat(due).replace(tzinfo=TZ)
+
+
+def fmt_due(due):
+    if not due:
+        return ""
+    d = due_local(due)
+    return f"{d:%d.%m.}" if len(due) == 10 else f"{d:%d.%m. %H:%M}"
+
+
+def new_todo(title, cat, due=None, remind=None, notes=""):
+    remind_at = None
+    if due and remind is not None:
+        remind_at = utc_iso(due_local(due) - timedelta(minutes=remind))
+    return {
+        "id": secrets.token_hex(5), "title": title, "cat": cat, "notes": notes,
+        "due": due, "remind": remind if due else None, "remindAt": remind_at, "reminded": False,
+        "done": False, "created": now_ms(), "updated": now_ms(),
+    }
+
+
+# --- Sprache -> Text (Gemini) --------------------------------------------------
 def gemini_candidates():
     """Stabile Gemini-Flash-Modelle, neueste zuerst (Modellnamen aendern sich bei Google oefter)."""
     r = requests.get("https://generativelanguage.googleapis.com/v1beta/models",
@@ -100,43 +171,49 @@ def transcribe(file_id):
     raise last
 
 
-def sort_todos(text, list_names):
+# --- Text -> To-Dos (Claude) ---------------------------------------------------
+def sort_todos(text):
     now = datetime.now(TZ)
+    cats = "\n".join(f"  {c['id']} = {c['emoji']} {c['name']} ({c['area']})" for c in CATEGORIES)
     system = (
-        "Du sortierst gesprochene oder getippte To-Dos in Trello-Karten fuer Sunny.\n"
+        "Du sortierst gesprochene oder getippte To-Dos fuer Sunny in ihre To-Do-App.\n"
         f"Heute ist {now:%A, %d.%m.%Y}, {now:%H:%M} Uhr (Zeitzone {TZ.key}).\n"
-        "Verfuegbare Listen (exakt so schreiben): " + " | ".join(list_names) + "\n"
+        "Kategorien (id = Bedeutung):\n" + cats + "\n"
         "Regeln:\n"
-        "- Mehrere To-Dos in einer Nachricht = mehrere Karten.\n"
-        "- Titel kurz und konkret, mit Verb am Anfang, Sprache wie Sunny sie sagt (Deutsch).\n"
-        "- list: die Liste, die Sunny nennt (auch sinngemaess, z. B. 'Franz privat' = Tagesliste Franz PRIVAT). "
-        "Nennt sie keine, setze list auf null.\n"
+        "- Mehrere To-Dos in einer Nachricht = mehrere To-Dos.\n"
+        "- title kurz und konkret, mit Verb am Anfang, Sprache wie Sunny sie sagt (Deutsch).\n"
+        "- cat: die id der Kategorie, die Sunny nennt oder die eindeutig passt "
+        "(z. B. 'Schule', 'SLB' = slb; 'Michelle' = miller; 'Markus' = wagner; 'Franny' = franny; "
+        "'privat', 'fuer mich' = sunny). Ist es unklar, setze cat auf null.\n"
         "- due: nur wenn ein Termin genannt wird, als ISO-Zeit lokal (YYYY-MM-DDTHH:MM). Ohne Uhrzeit 09:00. "
         "'morgen', 'Freitag' usw. ab heute ausrechnen. Sonst null.\n"
-        "- desc: nur Zusatzdetails, die nicht in den Titel passen, sonst leer.\n"
+        "- remind: Minuten VOR dem Termin, zu denen erinnert werden soll (z. B. 'eine Stunde vorher' = 60, "
+        "'am Vortag' = 1440). Bei Termin ohne Angabe 0 (= zum Termin). Ohne Termin null.\n"
+        "- notes: nur Zusatzdetails, die nicht in den Titel passen, sonst leer.\n"
         "- Erfinde nichts."
     )
     tool = {
-        "name": "karten_anlegen",
-        "description": "Legt die erkannten To-Dos als Trello-Karten an.",
+        "name": "todos_anlegen",
+        "description": "Legt die erkannten To-Dos in der App an.",
         "input_schema": {
             "type": "object",
             "properties": {
-                "cards": {
+                "todos": {
                     "type": "array",
                     "items": {
                         "type": "object",
                         "properties": {
                             "title": {"type": "string"},
-                            "list": {"type": ["string", "null"]},
+                            "cat": {"type": ["string", "null"], "enum": [c["id"] for c in CATEGORIES] + [None]},
                             "due": {"type": ["string", "null"]},
-                            "desc": {"type": "string"},
+                            "remind": {"type": ["integer", "null"]},
+                            "notes": {"type": "string"},
                         },
-                        "required": ["title", "list", "due"],
+                        "required": ["title", "cat", "due", "remind"],
                     },
                 }
             },
-            "required": ["cards"],
+            "required": ["todos"],
         },
     }
     r = requests.post(
@@ -147,7 +224,7 @@ def sort_todos(text, list_names):
             "max_tokens": 1000,
             "system": system,
             "tools": [tool],
-            "tool_choice": {"type": "tool", "name": "karten_anlegen"},
+            "tool_choice": {"type": "tool", "name": "todos_anlegen"},
             "messages": [{"role": "user", "content": text}],
         },
         timeout=60,
@@ -155,43 +232,26 @@ def sort_todos(text, list_names):
     r.raise_for_status()
     for block in r.json()["content"]:
         if block["type"] == "tool_use":
-            return block["input"]["cards"]
+            return block["input"]["todos"]
     return []
 
 
-def find_list(name, lists):
-    """Gibt die genannte Liste zurueck, oder None (dann fragt der Bot nach)."""
-    if not name:
-        return None
-    wanted = name.lower()
-    for l in lists:
-        if l["name"].lower() == wanted:
-            return l
-    for l in lists:  # Teilmatch
-        if wanted in l["name"].lower() or l["name"].lower() in wanted:
-            return l
-    return None
-
-
-def list_buttons(lists):
-    """Tasten fuer alle Listen, die 'Neue To-Do' heissen, zuerst."""
-    ordered = sorted(lists, key=lambda l: "neue to-do" not in l["name"].lower())
-    rows = [[{"text": l["name"], "callback_data": "L:" + l["id"]}] for l in ordered]
+def cat_buttons():
+    rows = [[{"text": f"{c['emoji']} {c['name']}", "callback_data": "C:" + c["id"]}] for c in CATEGORIES]
     return rows
 
 
-def create_card(card, lst):
-    params = {
-        "key": TRELLO_KEY, "token": TRELLO_TOKEN,
-        "idList": lst["id"], "name": card["title"], "pos": "bottom",
-    }
-    if card.get("desc"):
-        params["desc"] = card["desc"]
-    if card.get("due"):
-        local = datetime.fromisoformat(card["due"]).replace(tzinfo=TZ)
-        params["due"] = local.astimezone(ZoneInfo("UTC")).strftime("%Y-%m-%dT%H:%M:%S.000Z")
-    r = requests.post(f"{TRELLO}/cards", params=params, timeout=30)
-    r.raise_for_status()
+def open_list(data):
+    todos = [t for t in data["todos"] if not t.get("done") and not t.get("deleted")]
+    if not todos:
+        return "🎉 Nichts offen!"
+    out = []
+    for cat_id in [c["id"] for c in CATEGORIES] + [None]:
+        mine = sorted((t for t in todos if t.get("cat") == cat_id), key=lambda t: t.get("due") or "9999")
+        if mine:
+            out.append(cat_label(cat_id))
+            out += [f"  • {t['title']}" + (f" ⏰ {fmt_due(t['due'])}" if t.get("due") else "") for t in mine]
+    return "\n".join(out)
 
 
 def handle(msg):
@@ -205,10 +265,11 @@ def handle(msg):
     text = (msg.get("text") or "").strip()
     if text.startswith("/start") or text.startswith("/hilfe"):
         tg_send(chat_id, "Schick mir deine To-Dos als Text oder Sprachnachricht und sag dazu, wohin sie sollen "
-                         "(z. B. 'Rechnung schreiben, in die Tagesliste, bis Freitag'). /listen zeigt dir die Listen.")
+                         "(z. B. 'Angebot für Markus schreiben, bis Freitag 14 Uhr, eine Stunde vorher erinnern'). "
+                         "/offen zeigt alles, was noch offen ist.")
         return
-    if text.startswith("/listen"):
-        tg_send(chat_id, "Meine Listen:\n" + "\n".join("• " + l["name"] for l in trello_lists()))
+    if text.startswith("/offen") or text.startswith("/listen"):
+        tg_send(chat_id, open_list(load()))
         return
 
     voice = msg.get("voice") or msg.get("audio")
@@ -218,26 +279,27 @@ def handle(msg):
     if not text:
         return
 
-    lists = trello_lists()
-    cards = sort_todos(text, [l["name"] for l in lists])
-    if not cards:
+    found = sort_todos(text)
+    if not found:
         tg_send(chat_id, "Ich habe kein To-Do erkannt. Sag es mir bitte nochmal anders.")
         return
-    lines, pending = [], []
-    for c in cards:
-        lst = find_list(c.get("list"), lists)
-        if not lst:
-            pending.append(c)
-            continue
-        create_card(c, lst)
-        due = f" (bis {datetime.fromisoformat(c['due']):%d.%m. %H:%M})" if c.get("due") else ""
-        lines.append(f"✅ {c['title']}{due}\n    → {lst['name']}")
-    if lines:
-        tg_send(chat_id, "\n".join(lines))
+    data = load()
+    todos = [new_todo(t["title"], t.get("cat") if t.get("cat") in CAT else None,
+                      t.get("due"), t.get("remind"), t.get("notes") or "") for t in found]
+    data["todos"] += todos
+    lines = []
+    for t in todos:
+        due = f" (⏰ {fmt_due(t['due'])})" if t.get("due") else ""
+        lines.append(f"✅ {t['title']}{due}\n    → {cat_label(t['cat'])}")
+    pending = [t for t in todos if not t["cat"]]
     if pending:
-        txt = "❓ In welche Liste soll das?\n" + "\n".join(
-            "• " + c["title"] + (f" ⏰ {c['due']}" if c.get("due") else "") for c in pending)
-        tg_send(chat_id, txt, list_buttons(lists))
+        lines.append("\n❓ Wohin gehört das, was im Eingang gelandet ist?")
+        sent = tg_send(chat_id, "\n".join(lines), cat_buttons())
+        for t in pending:  # damit der Tastendruck spaeter genau diese To-Dos findet
+            t["tgmsg"] = sent.get("result", {}).get("message_id")
+    else:
+        tg_send(chat_id, "\n".join(lines))
+    save(data)
 
 
 def handle_callback(cb):
@@ -246,30 +308,69 @@ def handle_callback(cb):
     if chat_id != TG_CHAT:
         return
     requests.post(f"{TG}/answerCallbackQuery", json={"callback_query_id": cb["id"]}, timeout=30)
-    lists = trello_lists()
-    lst = next((l for l in lists if l["id"] == cb["data"][2:]), None)
-    cards = []
-    for line in msg.get("text", "").splitlines():
-        if line.startswith("• "):
-            body, due = line[2:], None
-            m = re.search(r" ⏰ (\d{4}-\d\d-\d\dT\d\d:\d\d)$", body)
-            if m:
-                due, body = m.group(1), body[:m.start()]
-            cards.append({"title": body, "due": due})
-    if not lst or not cards:
+    kind, _, arg = cb["data"].partition(":")
+    data = load()
+    by_id = {t["id"]: t for t in data["todos"]}
+
+    if kind == "C":  # Kategorie fuer die offenen To-Dos dieser Nachricht
+        todos = [t for t in data["todos"] if t.get("tgmsg") == msg["message_id"] and not t.get("cat")]
+        for t in todos:
+            t["cat"], t["updated"] = arg, now_ms()
+            t.pop("tgmsg", None)
+        if todos:
+            save(data)
+        tg_edit(chat_id, msg["message_id"],
+                "\n".join(f"✅ {t['title']}\n    → {cat_label(arg)}" for t in todos) or "Schon erledigt 👍")
+    elif kind == "D":  # Erledigt
+        t = by_id.get(arg)
+        if t:
+            t["done"], t["updated"] = True, now_ms()
+            save(data)
+        tg_edit(chat_id, msg["message_id"], f"✅ Erledigt: {t['title']}" if t else "Nicht mehr gefunden.")
+    elif kind == "S":  # Spaeter nochmal erinnern: S:<id>:<minuten>
+        tid, _, minutes = arg.partition(":")
+        t = by_id.get(tid)
+        if t:
+            later = datetime.now(TZ) + timedelta(minutes=int(minutes or 60))
+            t["remindAt"], t["reminded"], t["updated"] = utc_iso(later), False, now_ms()
+            save(data)
+            tg_edit(chat_id, msg["message_id"], f"😴 {t['title']}\nIch erinnere dich um {later:%H:%M} Uhr wieder.")
+
+
+def check_reminders():
+    """Schickt alle faelligen Erinnerungen per Telegram und merkt sich, dass sie raus sind."""
+    if not TG_CHAT:
         return
-    for c in cards:
-        create_card(c, lst)
-    done = "\n".join(f"✅ {c['title']}\n    → {lst['name']}" for c in cards)
-    requests.post(f"{TG}/editMessageText", json={"chat_id": chat_id, "message_id": msg["message_id"], "text": done}, timeout=30)
+    data = load()
+    now = datetime.now(ZoneInfo("UTC"))
+    changed = False
+    for t in data["todos"]:
+        if t.get("done") or t.get("deleted") or t.get("reminded") or not t.get("remindAt"):
+            continue
+        if datetime.fromisoformat(t["remindAt"].replace("Z", "+00:00")) > now:
+            continue
+        text = f"🔔 {t['title']}\n{cat_label(t.get('cat'))}"
+        if t.get("due"):
+            text += f"\n⏰ {fmt_due(t['due'])}"
+        if t.get("notes"):
+            text += f"\n📝 {t['notes']}"
+        tg_send(TG_CHAT, text, [
+            [{"text": "✅ Erledigt", "callback_data": f"D:{t['id']}"}],
+            [{"text": "😴 1 Std", "callback_data": f"S:{t['id']}:60"},
+             {"text": "😴 Morgen", "callback_data": f"S:{t['id']}:1440"}],
+        ])
+        t["reminded"], t["updated"] = True, now_ms()
+        changed = True
+    if changed:
+        save(data)
 
 
 def main():
-    missing = [k for k, v in {"TELEGRAM_TOKEN": TG_TOKEN, "TRELLO_KEY": TRELLO_KEY, "TRELLO_TOKEN": TRELLO_TOKEN,
+    missing = [k for k, v in {"TELEGRAM_TOKEN": TG_TOKEN, "GIST_TOKEN": GIST_TOKEN, "TODO_GIST_ID": GIST_ID,
                               "ANTHROPIC_API_KEY": ANTHROPIC_KEY, "GEMINI_API_KEY": GEMINI_KEY}.items() if not v]
     if missing:
         sys.exit("Fehlt: " + ", ".join(missing))
-    once = "--once" in sys.argv  # GitHub Actions: offene Nachrichten abarbeiten, dann beenden
+    once = "--once" in sys.argv  # GitHub Actions: offene Nachrichten abarbeiten, Erinnerungen schicken, beenden
     print("To-Do-Bot läuft.", flush=True)
     offset = None
     while True:
@@ -281,8 +382,6 @@ def main():
                 sys.exit(1)
             time.sleep(5)
             continue
-        if once and not r.get("result"):
-            return
         for u in r.get("result", []):
             offset = u["update_id"] + 1
             cb = u.get("callback_query")
@@ -297,6 +396,14 @@ def main():
                     tg_send(msg["chat"]["id"], "⚠️ Das hat nicht geklappt. Versuch es bitte nochmal.")
                 except Exception:
                     pass
+        if once and r.get("result"):
+            continue  # weitere Nachrichten abholen
+        try:
+            check_reminders()
+        except Exception as e:
+            print("Erinnerungs-Fehler:", repr(e), flush=True)
+        if once:
+            return
 
 
 if __name__ == "__main__":

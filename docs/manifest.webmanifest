@@ -1,0 +1,14 @@
+{
+  "name": "Meine To-Dos",
+  "short_name": "To-Dos",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#fdf6f9",
+  "theme_color": "#e8508a",
+  "lang": "de",
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any maskable" }
+  ]
+}

@@ -1,0 +1,82 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Meine To-Dos</title>
+<meta name="theme-color" content="#e8508a">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="To-Dos">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icons/icon-192.png">
+<link rel="apple-touch-icon" href="icons/icon-180.png">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<header class="top">
+  <h1>Meine To-Dos</h1>
+  <span id="sync" class="sync" title="Synchronisierung"></span>
+  <button id="btnSettings" class="icon-btn" aria-label="Einstellungen">⚙️</button>
+</header>
+
+<nav class="areas" id="areas"></nav>
+<nav class="cats" id="cats"></nav>
+
+<main id="list"></main>
+
+<button id="btnAdd" class="fab" aria-label="Neues To-Do">+</button>
+
+<!-- To-Do bearbeiten -->
+<dialog id="dlgTodo" class="sheet">
+  <form method="dialog" id="todoForm">
+    <h2 id="todoHeading">Neues To-Do</h2>
+    <input id="fTitle" class="title-input" placeholder="Was ist zu tun?" autocomplete="off" required>
+    <div class="field-label">Kategorie</div>
+    <div id="fCats" class="cat-pick"></div>
+    <div class="row">
+      <label>Datum<input type="date" id="fDate"></label>
+      <label>Uhrzeit<input type="time" id="fTime"></label>
+    </div>
+    <label>Erinnerung
+      <select id="fRemind">
+        <option value="">Keine</option>
+        <option value="0">Zum Termin</option>
+        <option value="15">15 Min. vorher</option>
+        <option value="60">1 Std. vorher</option>
+        <option value="180">3 Std. vorher</option>
+        <option value="1440">1 Tag vorher</option>
+      </select>
+    </label>
+    <p class="hint" id="remindHint"></p>
+    <label>Notizen<textarea id="fNotes" rows="3"></textarea></label>
+    <div class="actions">
+      <button type="button" id="btnDelete" class="btn danger">Löschen</button>
+      <span class="spacer"></span>
+      <button type="button" id="btnCancel" class="btn">Abbrechen</button>
+      <button type="submit" class="btn primary">Speichern</button>
+    </div>
+  </form>
+</dialog>
+
+<!-- Einrichtung / Einstellungen -->
+<dialog id="dlgSettings" class="sheet">
+  <form method="dialog" id="settingsForm">
+    <h2>Verbindung</h2>
+    <p class="hint">Deine To-Dos werden in einer <b>geheimen GitHub-Gist</b> gespeichert. So sind sie auf allen Geräten gleich,
+      und der Telegram-Bot kann dich erinnern. Dafür brauchst du einmalig einen GitHub-Token mit dem Recht <b>„Gists“</b>
+      (Anleitung in der README).</p>
+    <label>GitHub-Token<input id="sToken" type="password" autocomplete="off" placeholder="github_pat_…"></label>
+    <label>Gist-ID <span class="muted">(leer lassen – wird gesucht oder angelegt)</span><input id="sGist" autocomplete="off"></label>
+    <p id="sStatus" class="hint"></p>
+    <div class="actions">
+      <button type="button" id="btnLocal" class="btn">Erstmal nur lokal</button>
+      <span class="spacer"></span>
+      <button type="submit" class="btn primary">Verbinden</button>
+    </div>
+  </form>
+</dialog>
+
+<script src="app.js"></script>
+</body>
+</html>
