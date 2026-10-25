@@ -28,13 +28,13 @@ ANTHROPIC_KEY = os.environ.get("ANTHROPIC_API_KEY", "")
 GEMINI_KEY = os.environ.get("GEMINI_API_KEY", "")
 GEMINI_MODEL = os.environ.get("GEMINI_MODEL", "")  # bevorzugtes Modell, sonst automatisch das neueste Flash-Modell
 MODEL = os.environ.get("CLAUDE_MODEL", "claude-haiku-4-5-20251001")
-TZ = ZoneInfo(os.environ.get("TIMEZONE", "Europe/Vienna"))
+TZ = ZoneInfo(os.environ.get("TIMEZONE", "Europe/Vienna"))  # Ersatz, bis die App ihre Zeitzone gemeldet hat
 
 TG = f"https://api.telegram.org/bot{TG_TOKEN}"
 GH = "https://api.github.com"
 FILE = "todos.json"
 STATE_FILE = "bot.json"  # merkt sich z. B., ob der Abend-Check heute schon raus ist (die App fasst ihn nicht an)
-EVENING = int(os.environ.get("EVENING_HOUR", "19"))  # Abend-Erinnerung um 19 Uhr (Zeitzone TZ)
+EVENING = int(os.environ.get("EVENING_HOUR", "19"))  # Abend-Erinnerung um 19 Uhr (Ortszeit)
 
 # Gleiche Kategorien wie in der App (docs/app.js)
 CATEGORIES = [
@@ -43,7 +43,7 @@ CATEGORIES = [
     {"id": "slb", "name": "School-Life-Balance", "emoji": "🎓", "area": "Business"},
     {"id": "miller", "name": "Michelle Miller", "emoji": "🏚️", "area": "Business"},
     {"id": "wagner", "name": "Markus Wagner", "emoji": "🏡", "area": "Business"},
-    {"id": "falk", "name": "Stefan Falk", "emoji": "💼", "area": "Business"},
+    {"id": "falk", "name": "Stefan Falk", "emoji": "🌐", "area": "Business"},
 ]
 CAT = {c["id"]: c for c in CATEGORIES}
 
@@ -77,6 +77,16 @@ def load(name=FILE):
     data = json.loads(content or "{}")
     if name == FILE:
         data.setdefault("todos", [])
+    return data
+
+
+def use_tz(data):
+    """Die App traegt ein, in welcher Zeitzone Sunny gerade ist (z. B. auf Reisen) - die gilt dann auch hier."""
+    global TZ
+    try:
+        TZ = ZoneInfo(data.get("tz") or TZ.key)
+    except Exception:
+        pass
     return data
 
 
@@ -292,6 +302,7 @@ def handle(msg):
     if not text:
         return
 
+    data = use_tz(load())
     found = sort_todos(text)
     for t in found:  # nur gueltige Erinnerungen uebernehmen
         if t.get("remind") not in (None, "abend") and not isinstance(t.get("remind"), int):
@@ -299,7 +310,6 @@ def handle(msg):
     if not found:
         tg_send(chat_id, "Ich habe kein To-Do erkannt. Sag es mir bitte nochmal anders.")
         return
-    data = load()
     todos = [new_todo(t["title"], t.get("cat") if t.get("cat") in CAT else None,
                       t.get("due"), t.get("remind"), t.get("notes") or "") for t in found]
     data["todos"] += todos
@@ -325,7 +335,7 @@ def handle_callback(cb):
         return
     requests.post(f"{TG}/answerCallbackQuery", json={"callback_query_id": cb["id"]}, timeout=30)
     kind, _, arg = cb["data"].partition(":")
-    data = load()
+    data = use_tz(load())
     by_id = {t["id"]: t for t in data["todos"]}
 
     if kind == "C":  # Kategorie fuer die offenen To-Dos dieser Nachricht
@@ -357,7 +367,7 @@ def check_reminders():
     """Schickt alle faelligen Erinnerungen per Telegram und merkt sich, dass sie raus sind."""
     if not TG_CHAT:
         return
-    data = load()
+    data = use_tz(load())
     now = datetime.now(ZoneInfo("UTC"))
     changed = False
     for t in data["todos"]:
@@ -383,15 +393,18 @@ def check_reminders():
 
 def evening_check():
     """Jeden Abend ab 19 Uhr einmal: Was ist ueberfaellig, was steht heute noch und morgen an?"""
+    if not TG_CHAT:
+        return
+    data = use_tz(load())
     now = datetime.now(TZ)
-    if not TG_CHAT or now.hour < EVENING:
+    if now.hour < EVENING:
         return
     state = load(STATE_FILE)
     today = f"{now:%Y-%m-%d}"
     if state.get("evening") == today:
         return
     tomorrow = f"{now + timedelta(days=1):%Y-%m-%d}"
-    todos = [t for t in load()["todos"] if not t.get("done") and not t.get("deleted") and t.get("due")]
+    todos = [t for t in data["todos"] if not t.get("done") and not t.get("deleted") and t.get("due")]
     groups = [
         ("⚠️ Überfällig", [t for t in todos if t["due"][:10] < today]),
         ("📌 Heute noch", [t for t in todos if t["due"][:10] == today and due_local(t["due"]) > now]),

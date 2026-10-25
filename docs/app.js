@@ -9,7 +9,7 @@ const CATEGORIES = [
   { id: "slb", name: "School-Life-Balance", emoji: "🎓", area: "business" },
   { id: "miller", name: "Michelle Miller", emoji: "🏚️", area: "business" },
   { id: "wagner", name: "Markus Wagner", emoji: "🏡", area: "business" },
-  { id: "falk", name: "Stefan Falk", emoji: "💼", area: "business" },
+  { id: "falk", name: "Stefan Falk", emoji: "🌐", area: "business" },
 ];
 const AREAS = [
   { id: "all", name: "Alle" },
@@ -256,10 +256,21 @@ async function sync(push) {
   try {
     const remote = await fetchRemote();
     const merged = merge(remote, data);
-    const differs = JSON.stringify(merged.todos.slice().sort(byId)) !== JSON.stringify((remote.todos || []).slice().sort(byId));
+    // Zeitzone dieses Geräts melden (auf Reisen), damit der Bot zur richtigen Ortszeit erinnert
+    const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    merged.tz = tz;
+    if (remote.tz !== tz) {
+      for (const t of merged.todos) { // Erinnerungen auf die neue Ortszeit umrechnen
+        if (t.done || t.deleted || t.reminded || !t.due || t.remind === null || t.remind === undefined) continue;
+        const at = remindAtOf(t);
+        if (at !== t.remindAt) Object.assign(t, { remindAt: at, updated: Date.now() });
+      }
+    }
+    const differs = remote.tz !== tz ||
+      JSON.stringify(merged.todos.slice().sort(byId)) !== JSON.stringify((remote.todos || []).slice().sort(byId));
     data = merged;
     writeLS("todo-data", data);
-    if (push && differs) {
+    if ((push || remote.tz !== tz) && differs) {
       await gh(`/gists/${cfg.gistId}`, {
         method: "PATCH",
         body: JSON.stringify({ files: { [FILE]: { content: JSON.stringify(data, null, 1) } } }),

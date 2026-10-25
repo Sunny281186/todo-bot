@@ -3,7 +3,7 @@
 Eigene To-Do-App (statt Trello) mit Telegram-Bot und Erinnerungen.
 
 **Privat:** 🎀 Sunny · 🩷 Franny
-**Business:** 🎓 School-Life-Balance · 🏚️ Michelle Miller · 🏡 Markus Wagner · 💼 Stefan Falk
+**Business:** 🎓 School-Life-Balance · 🏚️ Michelle Miller · 🏡 Markus Wagner · 🌐 Stefan Falk
 
 - **App** (`docs/`): läuft im Browser und lässt sich aufs Handy legen wie eine echte App.
   To-Dos anlegen, Datum/Uhrzeit, Erinnerung (zum Termin, 15 Min., 1 Std., 3 Std., 1 Tag vorher oder am Vorabend um 19 Uhr), Notizen, abhaken.
@@ -11,8 +11,10 @@ Eigene To-Do-App (statt Trello) mit Telegram-Bot und Erinnerungen.
   `/offen` zeigt alles Offene.
 - **Erinnerungen** kommen als Telegram-Nachricht mit Tasten **✅ Erledigt**, **😴 1 Std** und **😴 Morgen**.
 
-- **Abend-Check** jeden Tag um 19 Uhr (Zeitzone `TIMEZONE`, Standard Europe/Vienna): Was ist überfällig, was steht heute noch und morgen an?
+- **Abend-Check** jeden Tag um 19 Uhr Ortszeit: Was ist überfällig, was steht heute noch und morgen an?
   Uhrzeit änderbar über die Variable `EVENING_HOUR`.
+- **Zeitzone automatisch:** Die App meldet bei jedem Öffnen, in welcher Zeitzone dein Handy gerade ist (z. B. auf Reisen).
+  Erinnerungen und Abend-Check richten sich dann nach der Ortszeit dort.
 
 Daten liegen in einer **geheimen GitHub-Gist** (`todos.json`) – nicht in diesem (öffentlichen) Repo.
 App und Bot lesen und schreiben dieselbe Datei.
