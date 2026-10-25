@@ -33,6 +33,8 @@ TZ = ZoneInfo(os.environ.get("TIMEZONE", "Europe/Vienna"))
 TG = f"https://api.telegram.org/bot{TG_TOKEN}"
 GH = "https://api.github.com"
 FILE = "todos.json"
+STATE_FILE = "bot.json"  # merkt sich z. B., ob der Abend-Check heute schon raus ist (die App fasst ihn nicht an)
+EVENING = int(os.environ.get("EVENING_HOUR", "19"))  # Abend-Erinnerung um 19 Uhr (Zeitzone TZ)
 
 # Gleiche Kategorien wie in der App (docs/app.js)
 CATEGORIES = [
@@ -41,6 +43,7 @@ CATEGORIES = [
     {"id": "slb", "name": "School-Life-Balance", "emoji": "🎓", "area": "Business"},
     {"id": "miller", "name": "Michelle Miller", "emoji": "🏚️", "area": "Business"},
     {"id": "wagner", "name": "Markus Wagner", "emoji": "🏡", "area": "Business"},
+    {"id": "falk", "name": "Stefan Falk", "emoji": "💼", "area": "Business"},
 ]
 CAT = {c["id"]: c for c in CATEGORIES}
 
@@ -64,21 +67,22 @@ def tg_edit(chat_id, message_id, text):
 
 
 # --- Speicher (geheime Gist) ---------------------------------------------------
-def load():
+def load(name=FILE):
     r = requests.get(f"{GH}/gists/{GIST_ID}", headers=gh_headers(), timeout=30)
     r.raise_for_status()
-    f = r.json()["files"].get(FILE)
+    f = r.json()["files"].get(name)
     if not f:
-        return {"version": 1, "todos": []}
+        return {"version": 1, "todos": []} if name == FILE else {}
     content = f["content"] if not f.get("truncated") else requests.get(f["raw_url"], timeout=30).text
     data = json.loads(content or "{}")
-    data.setdefault("todos", [])
+    if name == FILE:
+        data.setdefault("todos", [])
     return data
 
 
-def save(data):
+def save(data, name=FILE):
     r = requests.patch(f"{GH}/gists/{GIST_ID}", headers=gh_headers(), timeout=30,
-                       json={"files": {FILE: {"content": json.dumps(data, ensure_ascii=False, indent=1)}}})
+                       json={"files": {name: {"content": json.dumps(data, ensure_ascii=False, indent=1)}}})
     r.raise_for_status()
 
 
@@ -108,10 +112,18 @@ def fmt_due(due):
     return f"{d:%d.%m.}" if len(due) == 10 else f"{d:%d.%m. %H:%M}"
 
 
+def remind_at_of(due, remind):
+    """remind = Minuten vor dem Termin oder 'abend' (= am Vorabend um 19 Uhr)."""
+    if not due or remind is None:
+        return None
+    if remind == "abend":
+        eve = due_local(due) - timedelta(days=1)
+        return utc_iso(eve.replace(hour=EVENING, minute=0, second=0, microsecond=0))
+    return utc_iso(due_local(due) - timedelta(minutes=int(remind)))
+
+
 def new_todo(title, cat, due=None, remind=None, notes=""):
-    remind_at = None
-    if due and remind is not None:
-        remind_at = utc_iso(due_local(due) - timedelta(minutes=remind))
+    remind_at = remind_at_of(due, remind)
     return {
         "id": secrets.token_hex(5), "title": title, "cat": cat, "notes": notes,
         "due": due, "remind": remind if due else None, "remindAt": remind_at, "reminded": False,
@@ -183,12 +195,13 @@ def sort_todos(text):
         "- Mehrere To-Dos in einer Nachricht = mehrere To-Dos.\n"
         "- title kurz und konkret, mit Verb am Anfang, Sprache wie Sunny sie sagt (Deutsch).\n"
         "- cat: die id der Kategorie, die Sunny nennt oder die eindeutig passt "
-        "(z. B. 'Schule', 'SLB' = slb; 'Michelle' = miller; 'Markus' = wagner; 'Franny' = franny; "
+        "(z. B. 'Schule', 'SLB' = slb; 'Michelle' = miller; 'Markus' = wagner; 'Stefan' = falk; 'Franny' = franny; "
         "'privat', 'fuer mich' = sunny). Ist es unklar, setze cat auf null.\n"
         "- due: nur wenn ein Termin genannt wird, als ISO-Zeit lokal (YYYY-MM-DDTHH:MM). Ohne Uhrzeit 09:00. "
         "'morgen', 'Freitag' usw. ab heute ausrechnen. Sonst null.\n"
         "- remind: Minuten VOR dem Termin, zu denen erinnert werden soll (z. B. 'eine Stunde vorher' = 60, "
-        "'am Vortag' = 1440). Bei Termin ohne Angabe 0 (= zum Termin). Ohne Termin null.\n"
+        "'am Vortag' = 1440), oder \"abend\" fuer 'am Vorabend' / 'abends vorher' (= Vortag 19 Uhr). "
+        "Bei Termin ohne Angabe 0 (= zum Termin). Ohne Termin null.\n"
         "- notes: nur Zusatzdetails, die nicht in den Titel passen, sonst leer.\n"
         "- Erfinde nichts."
     )
@@ -206,7 +219,7 @@ def sort_todos(text):
                             "title": {"type": "string"},
                             "cat": {"type": ["string", "null"], "enum": [c["id"] for c in CATEGORIES] + [None]},
                             "due": {"type": ["string", "null"]},
-                            "remind": {"type": ["integer", "null"]},
+                            "remind": {"type": ["integer", "string", "null"]},
                             "notes": {"type": "string"},
                         },
                         "required": ["title", "cat", "due", "remind"],
@@ -280,6 +293,9 @@ def handle(msg):
         return
 
     found = sort_todos(text)
+    for t in found:  # nur gueltige Erinnerungen uebernehmen
+        if t.get("remind") not in (None, "abend") and not isinstance(t.get("remind"), int):
+            t["remind"] = 0
     if not found:
         tg_send(chat_id, "Ich habe kein To-Do erkannt. Sag es mir bitte nochmal anders.")
         return
@@ -365,6 +381,36 @@ def check_reminders():
         save(data)
 
 
+def evening_check():
+    """Jeden Abend ab 19 Uhr einmal: Was ist ueberfaellig, was steht heute noch und morgen an?"""
+    now = datetime.now(TZ)
+    if not TG_CHAT or now.hour < EVENING:
+        return
+    state = load(STATE_FILE)
+    today = f"{now:%Y-%m-%d}"
+    if state.get("evening") == today:
+        return
+    tomorrow = f"{now + timedelta(days=1):%Y-%m-%d}"
+    todos = [t for t in load()["todos"] if not t.get("done") and not t.get("deleted") and t.get("due")]
+    groups = [
+        ("⚠️ Überfällig", [t for t in todos if t["due"][:10] < today]),
+        ("📌 Heute noch", [t for t in todos if t["due"][:10] == today and due_local(t["due"]) > now]),
+        ("🌅 Morgen", [t for t in todos if t["due"][:10] == tomorrow]),
+    ]
+    lines = ["🌙 Dein Abend-Check"]
+    for label, items in groups:
+        if items:
+            lines.append(f"\n{label}")
+            lines += [f"  • {CAT.get(t.get('cat'), {}).get('emoji', '📥')} {t['title']}"
+                      + (f" ⏰ {due_local(t['due']):%H:%M}" if len(t["due"]) > 10 else "")
+                      for t in sorted(items, key=lambda t: t["due"])]
+    if len(lines) == 1:
+        lines.append("Morgen steht nichts Festes an. Schönen Abend! ✨")
+    tg_send(TG_CHAT, "\n".join(lines))
+    state["evening"] = today
+    save(state, STATE_FILE)
+
+
 def main():
     missing = [k for k, v in {"TELEGRAM_TOKEN": TG_TOKEN, "GIST_TOKEN": GIST_TOKEN, "TODO_GIST_ID": GIST_ID,
                               "ANTHROPIC_API_KEY": ANTHROPIC_KEY, "GEMINI_API_KEY": GEMINI_KEY}.items() if not v]
@@ -400,6 +446,7 @@ def main():
             continue  # weitere Nachrichten abholen
         try:
             check_reminders()
+            evening_check()
         except Exception as e:
             print("Erinnerungs-Fehler:", repr(e), flush=True)
         if once:

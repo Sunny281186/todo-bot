@@ -9,6 +9,7 @@ const CATEGORIES = [
   { id: "slb", name: "School-Life-Balance", emoji: "🎓", area: "business" },
   { id: "miller", name: "Michelle Miller", emoji: "🏚️", area: "business" },
   { id: "wagner", name: "Markus Wagner", emoji: "🏡", area: "business" },
+  { id: "falk", name: "Stefan Falk", emoji: "💼", area: "business" },
 ];
 const AREAS = [
   { id: "all", name: "Alle" },
@@ -43,8 +44,15 @@ function dueDate(due) {
   if (!due) return null;
   return new Date(due.length === 10 ? due + "T09:00" : due); // ohne Offset = lokale Zeit
 }
+const EVENING = 19; // „Am Vorabend“ = Vortag 19 Uhr (wie im Bot)
 function remindAtOf(t) {
   if (!t.due || t.remind === null || t.remind === undefined) return null;
+  if (t.remind === "abend") {
+    const d = dueDate(t.due);
+    d.setDate(d.getDate() - 1);
+    d.setHours(EVENING, 0, 0, 0);
+    return d.toISOString();
+  }
   return new Date(dueDate(t.due).getTime() - t.remind * 60000).toISOString();
 }
 function startOfDay(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); return x; }
@@ -171,7 +179,8 @@ function saveForm() {
   if (!title) return;
   const date = $("#fDate").value, time = $("#fTime").value;
   const due = date ? (time ? `${date}T${time}` : date) : null;
-  const remind = $("#fRemind").value === "" || !due ? null : Number($("#fRemind").value);
+  const r = $("#fRemind").value;
+  const remind = r === "" || !due ? null : r === "abend" ? "abend" : Number(r);
   // per ID nachschlagen: ein Abgleich im Hintergrund kann data inzwischen ersetzt haben
   const old = editing && data.todos.find((x) => x.id === editing.id);
   const t = old || { id: newId(), created: Date.now(), done: false, reminded: false };

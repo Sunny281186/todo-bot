@@ -1,6 +1,6 @@
 // Offline-Fähigkeit: App-Dateien aus dem Cache, im Hintergrund aktualisieren.
 // Anfragen an GitHub (Daten) gehen immer direkt ins Netz.
-const CACHE = "todos-v1";
+const CACHE = "todos-v2";
 const FILES = ["./", "index.html", "style.css", "app.js", "manifest.webmanifest", "icons/icon-192.png", "icons/icon-180.png"];
 
 self.addEventListener("install", (e) => {
