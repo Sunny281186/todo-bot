@@ -45,7 +45,6 @@ Jeder Call wird nur einmal verarbeitet. Schlägt etwas fehl, versucht es der nä
    **Client-ID** und **Clientschlüssel** notieren.
 5. Auf deinem Rechner einmal ausführen:
    ```
-   pip install requests
    GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... python google_login.py
    ```
    Mit dem Google-Konto anmelden, in dem die Dateien landen sollen (die Warnung „Google hat diese

@@ -4,14 +4,14 @@
   GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... python google_login.py
 
 Oeffnet den Browser, du meldest dich mit deinem Google-Konto an, danach steht der Token im Terminal.
-Der Bot darf nur Dateien sehen und aendern, die er selbst angelegt hat (Berechtigung drive.file).
+Braucht nur Python 3, keine weiteren Pakete. Der Bot darf nur Dateien sehen und aendern, die er selbst angelegt hat (Berechtigung drive.file).
 """
 import http.server
+import json
 import os
 import urllib.parse
+import urllib.request
 import webbrowser
-
-import requests
 
 CLIENT = os.environ["GOOGLE_CLIENT_ID"]
 SECRET = os.environ["GOOGLE_CLIENT_SECRET"]
@@ -41,8 +41,8 @@ webbrowser.open(url)
 server = http.server.HTTPServer(("localhost", PORT), Handler)
 while not Handler.code:
     server.handle_request()
-r = requests.post("https://oauth2.googleapis.com/token", timeout=30, data={
+body = urllib.parse.urlencode({
     "code": Handler.code, "client_id": CLIENT, "client_secret": SECRET,
-    "redirect_uri": REDIRECT, "grant_type": "authorization_code"})
-r.raise_for_status()
-print("\nGOOGLE_REFRESH_TOKEN =", r.json()["refresh_token"])
+    "redirect_uri": REDIRECT, "grant_type": "authorization_code"}).encode()
+with urllib.request.urlopen("https://oauth2.googleapis.com/token", body, timeout=30) as r:
+    print("\nGOOGLE_REFRESH_TOKEN =", json.load(r)["refresh_token"])
