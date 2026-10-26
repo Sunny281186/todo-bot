@@ -1,20 +1,20 @@
 #!/usr/bin/env python3
 """Einmalig am eigenen Rechner ausfuehren: holt den GOOGLE_REFRESH_TOKEN fuer den Zoom-Bot.
 
-  GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... python google_login.py
+  python3 google_login.py   (fragt nach Client-ID und Clientschluessel)
 
 Oeffnet den Browser, du meldest dich mit deinem Google-Konto an, danach steht der Token im Terminal.
-Der Bot darf nur Dateien sehen und aendern, die er selbst angelegt hat (Berechtigung drive.file).
+Braucht nur Python 3, keine weiteren Pakete. Der Bot darf nur Dateien sehen und aendern, die er selbst angelegt hat (Berechtigung drive.file).
 """
 import http.server
+import json
 import os
 import urllib.parse
+import urllib.request
 import webbrowser
 
-import requests
-
-CLIENT = os.environ["GOOGLE_CLIENT_ID"]
-SECRET = os.environ["GOOGLE_CLIENT_SECRET"]
+CLIENT = os.environ.get("GOOGLE_CLIENT_ID") or input("Client-ID: ").strip()
+SECRET = os.environ.get("GOOGLE_CLIENT_SECRET") or input("Clientschluessel: ").strip()
 PORT = 8765
 REDIRECT = f"http://localhost:{PORT}"
 
@@ -35,14 +35,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode({
     "client_id": CLIENT, "redirect_uri": REDIRECT, "response_type": "code",
-    "scope": "https://www.googleapis.com/auth/drive.file", "access_type": "offline", "prompt": "consent"})
+    "scope": "https://www.googleapis.com/auth/drive.file", "access_type": "offline", "prompt": "select_account consent"})
 print("Falls sich kein Browser oeffnet, diesen Link aufrufen:\n" + url, flush=True)
 webbrowser.open(url)
 server = http.server.HTTPServer(("localhost", PORT), Handler)
 while not Handler.code:
     server.handle_request()
-r = requests.post("https://oauth2.googleapis.com/token", timeout=30, data={
+body = urllib.parse.urlencode({
     "code": Handler.code, "client_id": CLIENT, "client_secret": SECRET,
-    "redirect_uri": REDIRECT, "grant_type": "authorization_code"})
-r.raise_for_status()
-print("\nGOOGLE_REFRESH_TOKEN =", r.json()["refresh_token"])
+    "redirect_uri": REDIRECT, "grant_type": "authorization_code"}).encode()
+with urllib.request.urlopen("https://oauth2.googleapis.com/token", body, timeout=30) as r:
+    print("\nGOOGLE_REFRESH_TOKEN =", json.load(r)["refresh_token"])
