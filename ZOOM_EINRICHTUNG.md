@@ -45,9 +45,9 @@ Jeder Call wird nur einmal verarbeitet. Schlägt etwas fehl, versucht es der nä
    **Client-ID** und **Clientschlüssel** notieren.
 5. Auf deinem Rechner einmal ausführen:
    ```
-   GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... python google_login.py
+   python3 google_login.py
    ```
-   Mit dem Google-Konto anmelden, in dem die Dateien landen sollen (die Warnung „Google hat diese
+   Client-ID und Clientschlüssel eingeben, wenn danach gefragt wird. Mit dem Google-Konto anmelden, in dem die Dateien landen sollen (die Warnung „Google hat diese
    App nicht überprüft“ mit *Erweitert → Weiter* bestätigen – es ist deine eigene App).
    Im Terminal steht danach der **GOOGLE_REFRESH_TOKEN**.
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Einmalig am eigenen Rechner ausfuehren: holt den GOOGLE_REFRESH_TOKEN fuer den Zoom-Bot.
 
-  GOOGLE_CLIENT_ID=... GOOGLE_CLIENT_SECRET=... python google_login.py
+  python3 google_login.py   (fragt nach Client-ID und Clientschluessel)
 
 Oeffnet den Browser, du meldest dich mit deinem Google-Konto an, danach steht der Token im Terminal.
 Braucht nur Python 3, keine weiteren Pakete. Der Bot darf nur Dateien sehen und aendern, die er selbst angelegt hat (Berechtigung drive.file).
@@ -13,8 +13,8 @@ import urllib.parse
 import urllib.request
 import webbrowser
 
-CLIENT = os.environ["GOOGLE_CLIENT_ID"]
-SECRET = os.environ["GOOGLE_CLIENT_SECRET"]
+CLIENT = os.environ.get("GOOGLE_CLIENT_ID") or input("Client-ID: ").strip()
+SECRET = os.environ.get("GOOGLE_CLIENT_SECRET") or input("Clientschluessel: ").strip()
 PORT = 8765
 REDIRECT = f"http://localhost:{PORT}"
 
