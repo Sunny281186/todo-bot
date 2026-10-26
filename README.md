@@ -48,8 +48,8 @@ Repo → Settings → Secrets and variables → **Actions** → diese Secrets an
 
 `TRELLO_KEY` / `TRELLO_TOKEN` werden nicht mehr gebraucht.
 
-Der Workflow läuft alle 5 Minuten: Er holt neue Telegram-Nachrichten ab und verschickt fällige Erinnerungen.
-GitHub startet geplante Läufe manchmal ein paar Minuten später – Erinnerungen kommen also **± ein paar Minuten** genau.
+Der Bot läuft durchgehend (je Lauf knapp 6 Stunden, danach übernimmt der nächste Lauf). Er antwortet in Telegram sofort
+und verschickt Erinnerungen auf ca. 1 Minute genau. Für öffentliche Repos kostet das bei GitHub nichts.
 Hinweis: GitHub pausiert geplante Workflows, wenn im Repo 60 Tage lang nichts passiert – dann unter *Actions* wieder aktivieren.
 
 ## Warum Telegram und nicht WhatsApp?

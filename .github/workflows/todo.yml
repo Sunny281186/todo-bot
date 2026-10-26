@@ -1,7 +1,9 @@
 name: To-Do-Bot
+# Der Bot laeuft am Stueck knapp 6 Stunden (Erinnerungen auf ca. 1 Minute genau, Antworten sofort).
+# Der stuendliche Start sorgt dafuer, dass immer ein naechster Lauf wartet und nahtlos uebernimmt.
 on:
   schedule:
-    - cron: "*/5 * * * *"
+    - cron: "17 * * * *"
   workflow_dispatch:
 concurrency:
   group: todo-bot
@@ -9,14 +11,14 @@ concurrency:
 jobs:
   run:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 350
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: "3.12"
       - run: pip install -r requirements.txt
-      - run: python bot.py --once
+      - run: python bot.py --minuten=335
         env:
           GEMINI_MODEL: gemini-3.5-flash
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}

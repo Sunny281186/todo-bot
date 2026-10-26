@@ -429,10 +429,18 @@ def main():
                               "ANTHROPIC_API_KEY": ANTHROPIC_KEY, "GEMINI_API_KEY": GEMINI_KEY}.items() if not v]
     if missing:
         sys.exit("Fehlt: " + ", ".join(missing))
-    once = "--once" in sys.argv  # GitHub Actions: offene Nachrichten abarbeiten, Erinnerungen schicken, beenden
-    print("To-Do-Bot läuft.", flush=True)
+    once = "--once" in sys.argv  # offene Nachrichten abarbeiten, Erinnerungen schicken, beenden
+    # --minuten N: so lange durchgehend laufen, dann sauber beenden (GitHub Actions startet den naechsten Lauf)
+    minutes = next((int(a.split("=", 1)[1]) for a in sys.argv if a.startswith("--minuten=")), 0)
+    deadline = time.time() + minutes * 60 if minutes else None
+    print("To-Do-Bot läuft." + (f" (für {minutes} Minuten)" if minutes else ""), flush=True)
     offset = None
     while True:
+        if deadline and time.time() > deadline:
+            if offset is not None:  # Verarbeitetes bei Telegram bestaetigen, damit der naechste Lauf es nicht doppelt macht
+                requests.get(f"{TG}/getUpdates", params={"timeout": 0, "offset": offset}, timeout=30)
+            print("Zeit um, bis zum nächsten Lauf.", flush=True)
+            return
         try:
             r = requests.get(f"{TG}/getUpdates", params={"timeout": 0 if once else 50, "offset": offset}, timeout=70).json()
         except Exception as e:
