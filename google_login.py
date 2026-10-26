@@ -35,7 +35,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 url = "https://accounts.google.com/o/oauth2/v2/auth?" + urllib.parse.urlencode({
     "client_id": CLIENT, "redirect_uri": REDIRECT, "response_type": "code",
-    "scope": "https://www.googleapis.com/auth/drive.file", "access_type": "offline", "prompt": "consent"})
+    "scope": "https://www.googleapis.com/auth/drive.file", "access_type": "offline", "prompt": "select_account consent"})
 print("Falls sich kein Browser oeffnet, diesen Link aufrufen:\n" + url, flush=True)
 webbrowser.open(url)
 server = http.server.HTTPServer(("localhost", PORT), Handler)
