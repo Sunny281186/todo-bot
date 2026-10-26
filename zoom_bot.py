@@ -35,7 +35,7 @@ G_SECRET = os.environ.get("GOOGLE_CLIENT_SECRET", "")
 G_REFRESH = os.environ.get("GOOGLE_REFRESH_TOKEN", "")
 DRIVE_FOLDER = os.environ.get("DRIVE_FOLDER_NAME", "Zoom-Calls")
 
-MODEL = os.environ.get("ZOOM_CLAUDE_MODEL", "claude-opus-5-5")
+MODEL = os.environ.get("ZOOM_CLAUDE_MODEL", "claude-sonnet-5-5")
 TRELLO_LIST = os.environ.get("ZOOM_TRELLO_LIST", "")  # Name der Trello-Liste, leer = keine Karten
 TZ = bot.TZ
 

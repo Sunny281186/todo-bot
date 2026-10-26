@@ -81,4 +81,4 @@ weil `TELEGRAM_TOKEN` und `TELEGRAM_CHAT_ID` schon eingetragen sind.
 | `TRANSCRIPT_WAIT_HOURS` | `3` | wie lange auf Zooms Transkript gewartet wird, bevor Gemini abschreibt |
 | `ZOOM_MIN_MINUTES` | `2` | kürzere Aufnahmen werden übersprungen |
 | `DRIVE_FOLDER_NAME` | `Zoom-Calls` | Name des Hauptordners beim ersten Anlegen |
-| `ZOOM_CLAUDE_MODEL` | `claude-opus-5-5` | Modell für die Zusammenfassung |
+| `ZOOM_CLAUDE_MODEL` | `claude-sonnet-5-5` | Modell für die Zusammenfassung |
