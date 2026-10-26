@@ -59,7 +59,10 @@ def tg_send(chat_id, text, buttons=None):
     body = {"chat_id": chat_id, "text": text}
     if buttons:
         body["reply_markup"] = {"inline_keyboard": buttons}
-    return requests.post(f"{TG}/sendMessage", json=body, timeout=30).json()
+    res = requests.post(f"{TG}/sendMessage", json=body, timeout=30).json()
+    if not res.get("ok"):
+        print("Telegram hat die Antwort abgelehnt:", res.get("description"), flush=True)
+    return res
 
 
 def tg_edit(chat_id, message_id, text):
@@ -306,6 +309,7 @@ def handle(msg):
         return  # Fremde werden ignoriert
 
     text = (msg.get("text") or "").strip()
+    print("Nachricht erhalten:", "Sprache" if (msg.get("voice") or msg.get("audio")) else "Text", flush=True)
     if text.startswith("/start") or text.startswith("/hilfe"):
         tg_send(chat_id, "Schick mir deine To-Dos als Text oder Sprachnachricht und sag dazu, wohin sie sollen "
                          "(z. B. 'Angebot für Markus schreiben, bis Freitag 14 Uhr, eine Stunde vorher erinnern'). "
