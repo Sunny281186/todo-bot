@@ -358,10 +358,12 @@ def process(meeting, ztoken, gtoken, root):
             t["due"] = None
     for f in existing:  # halb fertiger Ordner vom letzten Versuch
         drive_trash(gtoken, f["id"])
-    name = re.sub(r"[\\/]", "-", f"{started:%Y-%m-%d %H%M} – {topic}")  # Name des Zoom-Termins
+    call = re.sub(r"[\\/]", "-", topic)  # Name des Zoom-Termins
+    name = f"{call} – {started:%d.%m.%Y}"
     folder = drive_folder(gtoken, name, parent=root, props={"zoomUuid": uuid})
-    tdoc = drive_doc(gtoken, f"{name} – Transkript", folder["id"], transcript_html(rows, topic, started, source))
-    sdoc = drive_doc(gtoken, f"{name} – Zusammenfassung & To-Dos", folder["id"],
+    tdoc = drive_doc(gtoken, f"{call} – Transkript – {started:%d.%m.%Y}", folder["id"],
+                     transcript_html(rows, topic, started, source))
+    sdoc = drive_doc(gtoken, f"{call} – To-Dos – {started:%d.%m.%Y}", folder["id"],
                      summary_html(s, topic, started, meeting.get("duration", 0), tdoc["webViewLink"]))
     drive_mark_done(gtoken, folder["id"])
 
