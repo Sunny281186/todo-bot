@@ -25,7 +25,8 @@ const STATUSES = [
   { id: "wait", emoji: "⏳", name: "Wait" },
   { id: "done", emoji: "✅", name: "Erledigt" },
 ];
-const FILE = "todos.json";
+const FILE = "todos.json"; // schreibt nur die App
+const BOT_FILE = "todos-bot.json"; // schreibt nur der Bot – so überschreibt keiner die Änderungen des anderen
 const GH = "https://api.github.com";
 
 const $ = (s) => document.querySelector(s);
@@ -267,10 +268,12 @@ async function gh(path, opts = {}) {
 
 async function fetchRemote() {
   const g = await gh(`/gists/${cfg.gistId}`);
-  const f = g.files[FILE];
-  if (!f) return { version: 1, todos: [] };
-  const text = f.truncated ? await (await fetch(f.raw_url, { cache: "no-store" })).text() : f.content;
-  return JSON.parse(text || "{}");
+  const read = async (f) => {
+    if (!f) return { version: 1, todos: [] };
+    const text = f.truncated ? await (await fetch(f.raw_url, { cache: "no-store" })).text() : f.content;
+    return JSON.parse(text || "{}");
+  };
+  return { own: await read(g.files[FILE]), bot: await read(g.files[BOT_FILE]) };
 }
 
 // Neuere Änderung gewinnt (pro To-Do), gelöschte bleiben als Markierung erhalten.
@@ -298,8 +301,8 @@ async function sync(push) {
   busy = true;
   setSync("busy", "Synchronisiere …");
   try {
-    const remote = await fetchRemote();
-    const merged = merge(remote, data);
+    const { own: remote, bot } = await fetchRemote();
+    const merged = merge(merge(remote, bot), data);
     // Zeitzone dieses Geräts melden (auf Reisen), damit der Bot zur richtigen Ortszeit erinnert
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     merged.tz = tz;

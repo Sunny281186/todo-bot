@@ -32,7 +32,8 @@ TZ = ZoneInfo(os.environ.get("TIMEZONE", "Europe/Vienna"))  # Ersatz, bis die Ap
 
 TG = f"https://api.telegram.org/bot{TG_TOKEN}"
 GH = "https://api.github.com"
-FILE = "todos.json"
+FILE = "todos.json"  # schreibt nur die App
+BOT_FILE = "todos-bot.json"  # schreibt nur der Bot - so ueberschreibt keiner die Aenderungen des anderen
 STATE_FILE = "bot.json"  # merkt sich z. B., ob der Abend-Check heute schon raus ist (die App fasst ihn nicht an)
 EVENING = int(os.environ.get("EVENING_HOUR", "19"))  # Abend-Erinnerung um 19 Uhr (Ortszeit)
 
@@ -67,17 +68,34 @@ def tg_edit(chat_id, message_id, text):
 
 
 # --- Speicher (geheime Gist) ---------------------------------------------------
+def read_file(files, name):
+    f = files.get(name)
+    if not f:
+        return {}
+    content = f["content"] if not f.get("truncated") else requests.get(f["raw_url"], timeout=30).text
+    return json.loads(content or "{}")
+
+
+def merge(*lists):
+    """Pro To-Do gewinnt die neuere Aenderung; Geloeschtes bleibt 30 Tage als Markierung."""
+    newest = {}
+    for todos in lists:
+        for t in todos:
+            if t["id"] not in newest or t.get("updated", 0) > newest[t["id"]].get("updated", 0):
+                newest[t["id"]] = t
+    month = now_ms() - 30 * 86400000
+    return [t for t in newest.values() if not (t.get("deleted") and t.get("updated", 0) < month)]
+
+
 def load(name=FILE):
+    """To-Dos = Datei der App + Datei des Bots zusammengefuehrt. Andere Dateien (z. B. bot.json) einzeln."""
     r = requests.get(f"{GH}/gists/{GIST_ID}", headers=gh_headers(), timeout=30)
     r.raise_for_status()
-    f = r.json()["files"].get(name)
-    if not f:
-        return {"version": 1, "todos": []} if name == FILE else {}
-    content = f["content"] if not f.get("truncated") else requests.get(f["raw_url"], timeout=30).text
-    data = json.loads(content or "{}")
-    if name == FILE:
-        data.setdefault("todos", [])
-    return data
+    files = r.json()["files"]
+    if name != FILE:
+        return read_file(files, name)
+    app, mine = read_file(files, FILE), read_file(files, BOT_FILE)
+    return {"version": 1, "tz": app.get("tz"), "todos": merge(app.get("todos", []), mine.get("todos", []))}
 
 
 def use_tz(data):
@@ -91,6 +109,8 @@ def use_tz(data):
 
 
 def save(data, name=FILE):
+    if name == FILE:
+        name = BOT_FILE  # die Datei der App fasst der Bot nie an
     r = requests.patch(f"{GH}/gists/{GIST_ID}", headers=gh_headers(), timeout=30,
                        json={"files": {name: {"content": json.dumps(data, ensure_ascii=False, indent=1)}}})
     r.raise_for_status()
