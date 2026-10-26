@@ -44,6 +44,10 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .top h1 { font-size: 24px; margin: 0; flex: 1; }
 .icon-btn { background: none; border: 0; font-size: 20px; padding: 6px; }
+.mode-btn {
+  border: 1px solid var(--line); background: var(--card); border-radius: 999px;
+  padding: 6px 12px; font-size: 14px; font-weight: 600;
+}
 .sync { width: 10px; height: 10px; border-radius: 50%; background: var(--muted); }
 .sync.ok { background: #3bb273; }
 .sync.busy { background: #e5a83a; }
@@ -90,6 +94,37 @@ main { padding: 0 16px; }
 .item .meta .late { color: var(--late); font-weight: 600; }
 .empty { text-align: center; color: var(--muted); padding: 48px 16px; }
 .more { display: block; margin: 8px auto; background: none; border: 0; color: var(--accent); font-weight: 600; }
+
+/* Kanban-Board */
+body.board-mode { max-width: none; }
+body.board-mode .top, body.board-mode .areas, body.board-mode .cats { max-width: 1400px; margin-left: auto; margin-right: auto; }
+.board {
+  display: flex; gap: 12px; overflow-x: auto; padding: 8px 0 16px;
+  scroll-snap-type: x mandatory; max-width: 1400px; margin: 0 auto;
+}
+.col {
+  flex: 1 0 240px; min-width: 240px; background: var(--accent-soft); border-radius: 14px;
+  padding: 10px; display: flex; flex-direction: column; gap: 6px; scroll-snap-align: start;
+  border: 2px solid transparent;
+}
+.col.over { border-color: var(--accent); }
+.col h3 { margin: 2px 4px 4px; font-size: 15px; display: flex; gap: 6px; align-items: center; }
+.col h3 .n { margin-left: auto; color: var(--muted); font-size: 13px; font-weight: 600; }
+.cards { display: flex; flex-direction: column; gap: 6px; min-height: 40px; }
+.card {
+  background: var(--card); border-radius: 10px; box-shadow: var(--shadow);
+  padding: 10px; cursor: grab; user-select: none;
+}
+.card.dragging { opacity: .4; }
+.card .t { overflow-wrap: anywhere; }
+.card.done .t { text-decoration: line-through; color: var(--muted); }
+.card .meta { font-size: 12px; color: var(--muted); margin-top: 4px; display: flex; gap: 8px; flex-wrap: wrap; }
+.card .meta .late { color: var(--late); font-weight: 600; }
+.add-in { background: none; border: 0; color: var(--muted); text-align: left; padding: 6px 4px; font-size: 14px; }
+.add-in:hover { color: var(--accent); }
+@media (max-width: 640px) {
+  .col { flex-basis: 80vw; min-width: 80vw; }
+}
 
 .fab {
   position: fixed; right: 20px; bottom: calc(20px + env(safe-area-inset-bottom));

@@ -32,7 +32,8 @@ TZ = ZoneInfo(os.environ.get("TIMEZONE", "Europe/Vienna"))  # Ersatz, bis die Ap
 
 TG = f"https://api.telegram.org/bot{TG_TOKEN}"
 GH = "https://api.github.com"
-FILE = "todos.json"
+FILE = "todos.json"  # schreibt nur die App
+BOT_FILE = "todos-bot.json"  # schreibt nur der Bot - so ueberschreibt keiner die Aenderungen des anderen
 STATE_FILE = "bot.json"  # merkt sich z. B., ob der Abend-Check heute schon raus ist (die App fasst ihn nicht an)
 EVENING = int(os.environ.get("EVENING_HOUR", "19"))  # Abend-Erinnerung um 19 Uhr (Ortszeit)
 
@@ -58,7 +59,10 @@ def tg_send(chat_id, text, buttons=None):
     body = {"chat_id": chat_id, "text": text}
     if buttons:
         body["reply_markup"] = {"inline_keyboard": buttons}
-    return requests.post(f"{TG}/sendMessage", json=body, timeout=30).json()
+    res = requests.post(f"{TG}/sendMessage", json=body, timeout=30).json()
+    if not res.get("ok"):
+        print("Telegram hat die Antwort abgelehnt:", res.get("description"), flush=True)
+    return res
 
 
 def tg_edit(chat_id, message_id, text):
@@ -67,17 +71,34 @@ def tg_edit(chat_id, message_id, text):
 
 
 # --- Speicher (geheime Gist) ---------------------------------------------------
+def read_file(files, name):
+    f = files.get(name)
+    if not f:
+        return {}
+    content = f["content"] if not f.get("truncated") else requests.get(f["raw_url"], timeout=30).text
+    return json.loads(content or "{}")
+
+
+def merge(*lists):
+    """Pro To-Do gewinnt die neuere Aenderung; Geloeschtes bleibt 30 Tage als Markierung."""
+    newest = {}
+    for todos in lists:
+        for t in todos:
+            if t["id"] not in newest or t.get("updated", 0) > newest[t["id"]].get("updated", 0):
+                newest[t["id"]] = t
+    month = now_ms() - 30 * 86400000
+    return [t for t in newest.values() if not (t.get("deleted") and t.get("updated", 0) < month)]
+
+
 def load(name=FILE):
+    """To-Dos = Datei der App + Datei des Bots zusammengefuehrt. Andere Dateien (z. B. bot.json) einzeln."""
     r = requests.get(f"{GH}/gists/{GIST_ID}", headers=gh_headers(), timeout=30)
     r.raise_for_status()
-    f = r.json()["files"].get(name)
-    if not f:
-        return {"version": 1, "todos": []} if name == FILE else {}
-    content = f["content"] if not f.get("truncated") else requests.get(f["raw_url"], timeout=30).text
-    data = json.loads(content or "{}")
-    if name == FILE:
-        data.setdefault("todos", [])
-    return data
+    files = r.json()["files"]
+    if name != FILE:
+        return read_file(files, name)
+    app, mine = read_file(files, FILE), read_file(files, BOT_FILE)
+    return {"version": 1, "tz": app.get("tz"), "todos": merge(app.get("todos", []), mine.get("todos", []))}
 
 
 def use_tz(data):
@@ -91,6 +112,8 @@ def use_tz(data):
 
 
 def save(data, name=FILE):
+    if name == FILE:
+        name = BOT_FILE  # die Datei der App fasst der Bot nie an
     r = requests.patch(f"{GH}/gists/{GIST_ID}", headers=gh_headers(), timeout=30,
                        json={"files": {name: {"content": json.dumps(data, ensure_ascii=False, indent=1)}}})
     r.raise_for_status()
@@ -137,7 +160,7 @@ def new_todo(title, cat, due=None, remind=None, notes=""):
     return {
         "id": secrets.token_hex(5), "title": title, "cat": cat, "notes": notes,
         "due": due, "remind": remind if due else None, "remindAt": remind_at, "reminded": False,
-        "done": False, "created": now_ms(), "updated": now_ms(),
+        "status": "new", "done": False, "created": now_ms(), "updated": now_ms(),
     }
 
 
@@ -286,6 +309,7 @@ def handle(msg):
         return  # Fremde werden ignoriert
 
     text = (msg.get("text") or "").strip()
+    print("Nachricht erhalten:", "Sprache" if (msg.get("voice") or msg.get("audio")) else "Text", flush=True)
     if text.startswith("/start") or text.startswith("/hilfe"):
         tg_send(chat_id, "Schick mir deine To-Dos als Text oder Sprachnachricht und sag dazu, wohin sie sollen "
                          "(z. B. 'Angebot für Markus schreiben, bis Freitag 14 Uhr, eine Stunde vorher erinnern'). "
@@ -350,7 +374,7 @@ def handle_callback(cb):
     elif kind == "D":  # Erledigt
         t = by_id.get(arg)
         if t:
-            t["done"], t["updated"] = True, now_ms()
+            t["done"], t["status"], t["updated"] = True, "done", now_ms()
             save(data)
         tg_edit(chat_id, msg["message_id"], f"✅ Erledigt: {t['title']}" if t else "Nicht mehr gefunden.")
     elif kind == "S":  # Spaeter nochmal erinnern: S:<id>:<minuten>
@@ -429,10 +453,18 @@ def main():
                               "ANTHROPIC_API_KEY": ANTHROPIC_KEY, "GEMINI_API_KEY": GEMINI_KEY}.items() if not v]
     if missing:
         sys.exit("Fehlt: " + ", ".join(missing))
-    once = "--once" in sys.argv  # GitHub Actions: offene Nachrichten abarbeiten, Erinnerungen schicken, beenden
-    print("To-Do-Bot läuft.", flush=True)
+    once = "--once" in sys.argv  # offene Nachrichten abarbeiten, Erinnerungen schicken, beenden
+    # --minuten N: so lange durchgehend laufen, dann sauber beenden (GitHub Actions startet den naechsten Lauf)
+    minutes = next((int(a.split("=", 1)[1]) for a in sys.argv if a.startswith("--minuten=")), 0)
+    deadline = time.time() + minutes * 60 if minutes else None
+    print("To-Do-Bot läuft." + (f" (für {minutes} Minuten)" if minutes else ""), flush=True)
     offset = None
     while True:
+        if deadline and time.time() > deadline:
+            if offset is not None:  # Verarbeitetes bei Telegram bestaetigen, damit der naechste Lauf es nicht doppelt macht
+                requests.get(f"{TG}/getUpdates", params={"timeout": 0, "offset": offset}, timeout=30)
+            print("Zeit um, bis zum nächsten Lauf.", flush=True)
+            return
         try:
             r = requests.get(f"{TG}/getUpdates", params={"timeout": 0 if once else 50, "offset": offset}, timeout=70).json()
         except Exception as e:

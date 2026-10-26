@@ -6,6 +6,8 @@ Eigene To-Do-App (statt Trello) mit Telegram-Bot und Erinnerungen.
 **Business:** 🎓 School-Life-Balance · 🏚️ Michelle Miller · 🏡 Markus Wagner · 🌐 Stefan Falk
 
 - **App** (`docs/`): läuft im Browser und lässt sich aufs Handy legen wie eine echte App.
+  **Liste oder Kanban-Board** (🆕 New · 📋 To-Do · 🔨 In Bearbeitung · ⏳ Wait · ✅ Erledigt) – pro Kunde oder als Gesamtübersicht;
+  Karten am Laptop per Maus verschieben, am Handy im Bearbeiten-Fenster den Status wählen.
   To-Dos anlegen, Datum/Uhrzeit, Erinnerung (zum Termin, 15 Min., 1 Std., 3 Std., 1 Tag vorher oder am Vorabend um 19 Uhr), Notizen, abhaken.
 - **Telegram-Bot** (`bot.py`): To-Dos per Text oder Sprachnachricht schicken – landen direkt in der App, in der richtigen Kategorie.
   `/offen` zeigt alles Offene.
@@ -46,8 +48,8 @@ Repo → Settings → Secrets and variables → **Actions** → diese Secrets an
 
 `TRELLO_KEY` / `TRELLO_TOKEN` werden nicht mehr gebraucht.
 
-Der Workflow läuft alle 5 Minuten: Er holt neue Telegram-Nachrichten ab und verschickt fällige Erinnerungen.
-GitHub startet geplante Läufe manchmal ein paar Minuten später – Erinnerungen kommen also **± ein paar Minuten** genau.
+Der Bot läuft durchgehend (je Lauf knapp 6 Stunden, danach übernimmt der nächste Lauf). Er antwortet in Telegram sofort
+und verschickt Erinnerungen auf ca. 1 Minute genau. Für öffentliche Repos kostet das bei GitHub nichts.
 Hinweis: GitHub pausiert geplante Workflows, wenn im Repo 60 Tage lang nichts passiert – dann unter *Actions* wieder aktivieren.
 
 ## Warum Telegram und nicht WhatsApp?

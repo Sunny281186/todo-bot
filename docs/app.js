@@ -17,12 +17,25 @@ const AREAS = [
   { id: "business", name: "Business" },
 ];
 const INBOX = { id: null, name: "Eingang", emoji: "📥" };
-const FILE = "todos.json";
+// Spalten des Kanban-Boards
+const STATUSES = [
+  { id: "new", emoji: "🆕", name: "New" },
+  { id: "todo", emoji: "📋", name: "To-Do" },
+  { id: "doing", emoji: "🔨", name: "In Bearbeitung" },
+  { id: "wait", emoji: "⏳", name: "Wait" },
+  { id: "done", emoji: "✅", name: "Erledigt" },
+];
+const FILE = "todos.json"; // schreibt nur die App
+const BOT_FILE = "todos-bot.json"; // schreibt nur der Bot – so überschreibt keiner die Änderungen des anderen
 const GH = "https://api.github.com";
 
 const $ = (s) => document.querySelector(s);
 const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const catOf = (id) => CATEGORIES.find((c) => c.id === id) || INBOX;
+const statusOf = (t) => t.status || (t.done ? "done" : "new"); // ältere To-Dos haben noch keinen Status
+function setStatus(t, status) {
+  Object.assign(t, { status, done: status === "done", updated: Date.now() });
+}
 
 // --- Zustand ------------------------------------------------------------------
 function readLS(key, fallback) {
@@ -33,7 +46,7 @@ function writeLS(key, value) {
 }
 let data = readLS("todo-data", { version: 1, todos: [] });
 let cfg = readLS("todo-cfg", { token: "", gistId: "", local: false });
-let view = readLS("todo-view", { area: "all", cat: "" });
+let view = { mode: "list", ...readLS("todo-view", { area: "all", cat: "" }) };
 let showDone = false;
 let editing = null;
 
@@ -96,6 +109,8 @@ function render() {
   const todos = visible();
   const open = todos.filter((t) => !t.done);
 
+  document.body.classList.toggle("board-mode", view.mode === "board");
+  $("#btnMode").textContent = view.mode === "board" ? "☰ Liste" : "🗂️ Board";
   $("#areas").innerHTML = AREAS.map((a) =>
     `<button data-area="${a.id}" class="${view.area === a.id && !view.cat ? "on" : ""}">${a.name}</button>`).join("");
 
@@ -107,6 +122,7 @@ function render() {
   }).join("") + (inboxCount ? `<button class="chip ${view.cat === "inbox" ? "on" : ""}" data-cat="inbox">📥 Eingang<span class="n">${inboxCount}</span></button>` : "");
 
   const shown = todos.filter((t) => view.cat === "inbox" ? !t.cat : inView(t));
+  if (view.mode === "board") { renderBoard(shown); return; }
   const shownOpen = shown.filter((t) => !t.done)
     .sort((a, b) => (a.due ? dueDate(a.due) : Infinity) - (b.due ? dueDate(b.due) : Infinity) || a.created - b.created);
   const shownDone = shown.filter((t) => t.done).sort((a, b) => b.updated - a.updated);
@@ -124,6 +140,31 @@ function render() {
   $("#list").innerHTML = html;
 }
 
+// Kanban: eine Spalte pro Status. Mit Kunden-Filter = Board dieses Kunden, sonst Gesamtübersicht.
+function renderBoard(shown) {
+  const byDue = (a, b) => (a.due ? dueDate(a.due) : Infinity) - (b.due ? dueDate(b.due) : Infinity) || a.created - b.created;
+  $("#list").innerHTML = `<div class="board">${STATUSES.map((s) => {
+    let items = shown.filter((t) => statusOf(t) === s.id);
+    items = s.id === "done" ? items.sort((a, b) => b.updated - a.updated).slice(0, 30) : items.sort(byDue);
+    return `<section class="col" data-status="${s.id}">
+      <h3>${s.emoji} ${s.name}<span class="n">${items.length}</span></h3>
+      <div class="cards">${items.map(cardHtml).join("")}</div>
+      <button class="add-in" data-add="${s.id}">+ Hinzufügen</button>
+    </section>`;
+  }).join("")}</div>`;
+}
+
+function cardHtml(t) {
+  const c = catOf(t.cat);
+  const meta = [];
+  if (!view.cat || view.cat === "inbox") meta.push(`<span>${esc(c.name)}</span>`);
+  if (t.due) meta.push(`<span class="${isLate(t) ? "late" : ""}">${t.remind !== null && t.remind !== undefined ? "🔔" : "📅"} ${fmtDue(t.due)}</span>`);
+  if (t.notes) meta.push(`<span>📝</span>`);
+  return `<div class="card ${t.done ? "done" : ""}" draggable="true" data-id="${esc(t.id)}">
+    <div class="t"><span class="cat-emoji">${c.emoji}</span> ${esc(t.title)}</div>${meta.length ? `<div class="meta">${meta.join("")}</div>` : ""}
+  </div>`;
+}
+
 function itemHtml(t) {
   const c = catOf(t.cat);
   const meta = [];
@@ -137,7 +178,7 @@ function itemHtml(t) {
 }
 
 // --- Bearbeiten ---------------------------------------------------------------
-function openTodo(t) {
+function openTodo(t, status) {
   editing = t;
   const defCat = t?.cat ?? (view.cat && view.cat !== "inbox" ? view.cat
     : view.area !== "all" ? CATEGORIES.find((c) => c.area === view.area).id : "sunny");
@@ -155,6 +196,9 @@ function openTodo(t) {
       `<button type="button" class="chip ${c.id === defCat ? "on" : ""}" data-pick="${c.id}">${c.emoji} ${esc(c.name)}</button>`).join("");
   }
   $("#fCats").innerHTML = pick;
+  const st = t ? statusOf(t) : status || "new";
+  $("#fStatus").innerHTML = STATUSES.map((s) =>
+    `<button type="button" class="chip ${s.id === st ? "on" : ""}" data-status="${s.id}">${s.emoji} ${s.name}</button>`).join("");
   updateRemindHint();
   $("#dlgTodo").showModal();
   if (!t) $("#fTitle").focus();
@@ -186,7 +230,8 @@ function saveForm() {
   const t = old || { id: newId(), created: Date.now(), done: false, reminded: false };
   const remindAt = remindAtOf({ due, remind });
   if (remindAt !== t.remindAt) t.reminded = !!remindAt && new Date(remindAt) < new Date(); // nichts Vergangenes nachschicken
-  Object.assign(t, { title, cat: pickedCat(), due, remind, remindAt, notes: $("#fNotes").value.trim(), updated: Date.now() });
+  Object.assign(t, { title, cat: pickedCat(), due, remind, remindAt, notes: $("#fNotes").value.trim() });
+  setStatus(t, $("#fStatus .chip.on")?.dataset.status || statusOf(t));
   delete t.tgmsg;
   if (!old) data.todos.push(t);
   changed();
@@ -223,10 +268,12 @@ async function gh(path, opts = {}) {
 
 async function fetchRemote() {
   const g = await gh(`/gists/${cfg.gistId}`);
-  const f = g.files[FILE];
-  if (!f) return { version: 1, todos: [] };
-  const text = f.truncated ? await (await fetch(f.raw_url, { cache: "no-store" })).text() : f.content;
-  return JSON.parse(text || "{}");
+  const read = async (f) => {
+    if (!f) return { version: 1, todos: [] };
+    const text = f.truncated ? await (await fetch(f.raw_url, { cache: "no-store" })).text() : f.content;
+    return JSON.parse(text || "{}");
+  };
+  return { own: await read(g.files[FILE]), bot: await read(g.files[BOT_FILE]) };
 }
 
 // Neuere Änderung gewinnt (pro To-Do), gelöschte bleiben als Markierung erhalten.
@@ -254,8 +301,8 @@ async function sync(push) {
   busy = true;
   setSync("busy", "Synchronisiere …");
   try {
-    const remote = await fetchRemote();
-    const merged = merge(remote, data);
+    const { own: remote, bot } = await fetchRemote();
+    const merged = merge(merge(remote, bot), data);
     // Zeitzone dieses Geräts melden (auf Reisen), damit der Bot zur richtigen Ortszeit erinnert
     const tz = Intl.DateTimeFormat().resolvedOptions().timeZone;
     merged.tz = tz;
@@ -317,16 +364,23 @@ async function connect(token, gistId) {
 function openSettings() {
   $("#sToken").value = cfg.token || "";
   $("#sGist").value = cfg.gistId || "";
+  showSettingsStatus();
+  if (!$("#dlgSettings").open) $("#dlgSettings").showModal();
+}
+
+function showSettingsStatus() {
   $("#sStatus").innerHTML = cfg.gistId
     ? `Verbunden ✅<br>Gist-ID für den Bot (Secret <b>TODO_GIST_ID</b>): <code>${esc(cfg.gistId)}</code>`
     : "Noch nicht verbunden.";
-  $("#dlgSettings").showModal();
+  // verbunden: nur noch „Schließen“ nötig; „Verbinden“ bleibt zum Wechseln des Tokens
+  $("#btnLocal").hidden = !!cfg.gistId;
+  $("#btnConnect").textContent = cfg.gistId ? "Neu verbinden" : "Verbinden";
 }
 
 // --- Ereignisse ---------------------------------------------------------------
 $("#areas").addEventListener("click", (e) => {
   const b = e.target.closest("[data-area]");
-  if (b) { view = { area: b.dataset.area, cat: "" }; render(); }
+  if (b) { view = { ...view, area: b.dataset.area, cat: "" }; render(); }
 });
 $("#cats").addEventListener("click", (e) => {
   const b = e.target.closest("[data-cat]");
@@ -334,18 +388,52 @@ $("#cats").addEventListener("click", (e) => {
 });
 $("#list").addEventListener("click", (e) => {
   if (e.target.closest("[data-toggle-done]")) { showDone = !showDone; render(); return; }
+  const add = e.target.closest("[data-add]");
+  if (add) { openTodo(null, add.dataset.add); return; }
+  const card = e.target.closest(".card");
+  if (card) { openTodo(data.todos.find((x) => x.id === card.dataset.id)); return; }
   const row = e.target.closest(".item");
   if (!row) return;
   const t = data.todos.find((x) => x.id === row.dataset.id);
   if (e.target.closest("[data-check]")) {
-    t.done = !t.done;
-    t.updated = Date.now();
+    setStatus(t, t.done ? "todo" : "done");
     changed();
   } else if (e.target.closest("[data-edit]")) {
     openTodo(t);
   }
 });
 $("#btnAdd").addEventListener("click", () => openTodo(null));
+$("#btnMode").addEventListener("click", () => { view.mode = view.mode === "board" ? "list" : "board"; render(); });
+$("#fStatus").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-status]");
+  if (b) $("#fStatus").querySelectorAll(".chip").forEach((x) => x.classList.toggle("on", x === b));
+});
+
+// Karten am Laptop per Maus in eine andere Spalte ziehen
+$("#list").addEventListener("dragstart", (e) => {
+  const card = e.target.closest(".card");
+  if (card) { e.dataTransfer.setData("text/plain", card.dataset.id); card.classList.add("dragging"); }
+});
+$("#list").addEventListener("dragend", (e) => e.target.closest(".card")?.classList.remove("dragging"));
+$("#list").addEventListener("dragover", (e) => {
+  const col = e.target.closest(".col");
+  if (!col) return;
+  e.preventDefault();
+  document.querySelectorAll(".col.over").forEach((c) => c !== col && c.classList.remove("over"));
+  col.classList.add("over");
+});
+$("#list").addEventListener("dragleave", (e) => {
+  const col = e.target.closest(".col");
+  if (col && !col.contains(e.relatedTarget)) col.classList.remove("over");
+});
+$("#list").addEventListener("drop", (e) => {
+  const col = e.target.closest(".col");
+  if (!col) return;
+  e.preventDefault();
+  col.classList.remove("over");
+  const t = data.todos.find((x) => x.id === e.dataTransfer.getData("text/plain"));
+  if (t && statusOf(t) !== col.dataset.status) { setStatus(t, col.dataset.status); changed(); }
+});
 $("#fCats").addEventListener("click", (e) => {
   const b = e.target.closest("[data-pick]");
   if (!b) return;
@@ -368,6 +456,11 @@ $("#btnDelete").addEventListener("click", () => {
 $("#dlgTodo").addEventListener("close", () => { editing = null; });
 
 $("#btnSettings").addEventListener("click", openSettings);
+$("#btnCloseSettings").addEventListener("click", () => $("#dlgSettings").close());
+// Klick neben das Fenster schließt es
+for (const dlg of [$("#dlgSettings"), $("#dlgTodo")]) {
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+}
 $("#btnLocal").addEventListener("click", () => {
   cfg.local = true;
   writeLS("todo-cfg", cfg);
@@ -382,7 +475,7 @@ $("#settingsForm").addEventListener("submit", async (e) => {
   try {
     await connect(token, $("#sGist").value.trim());
     await sync(true);
-    openSettings();
+    showSettingsStatus();
   } catch (err) {
     $("#sStatus").textContent = "Das hat nicht geklappt (" + err.message + "). Hat der Token das Recht „Gists: Lesen und Schreiben“?";
   }
