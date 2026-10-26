@@ -6,6 +6,8 @@ Eigene To-Do-App (statt Trello) mit Telegram-Bot und Erinnerungen.
 **Business:** 🎓 School-Life-Balance · 🏚️ Michelle Miller · 🏡 Markus Wagner · 🌐 Stefan Falk
 
 - **App** (`docs/`): läuft im Browser und lässt sich aufs Handy legen wie eine echte App.
+  **Liste oder Kanban-Board** (🆕 New · 📋 To-Do · 🔨 In Bearbeitung · ⏳ Wait · ✅ Erledigt) – pro Kunde oder als Gesamtübersicht;
+  Karten am Laptop per Maus verschieben, am Handy im Bearbeiten-Fenster den Status wählen.
   To-Dos anlegen, Datum/Uhrzeit, Erinnerung (zum Termin, 15 Min., 1 Std., 3 Std., 1 Tag vorher oder am Vorabend um 19 Uhr), Notizen, abhaken.
 - **Telegram-Bot** (`bot.py`): To-Dos per Text oder Sprachnachricht schicken – landen direkt in der App, in der richtigen Kategorie.
   `/offen` zeigt alles Offene.

@@ -137,7 +137,7 @@ def new_todo(title, cat, due=None, remind=None, notes=""):
     return {
         "id": secrets.token_hex(5), "title": title, "cat": cat, "notes": notes,
         "due": due, "remind": remind if due else None, "remindAt": remind_at, "reminded": False,
-        "done": False, "created": now_ms(), "updated": now_ms(),
+        "status": "new", "done": False, "created": now_ms(), "updated": now_ms(),
     }
 
 
@@ -350,7 +350,7 @@ def handle_callback(cb):
     elif kind == "D":  # Erledigt
         t = by_id.get(arg)
         if t:
-            t["done"], t["updated"] = True, now_ms()
+            t["done"], t["status"], t["updated"] = True, "done", now_ms()
             save(data)
         tg_edit(chat_id, msg["message_id"], f"✅ Erledigt: {t['title']}" if t else "Nicht mehr gefunden.")
     elif kind == "S":  # Spaeter nochmal erinnern: S:<id>:<minuten>

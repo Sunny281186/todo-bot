@@ -17,6 +17,7 @@
 <header class="top">
   <h1>Meine To-Dos</h1>
   <span id="sync" class="sync" title="Synchronisierung"></span>
+  <button id="btnMode" class="mode-btn">🗂️ Board</button>
   <button id="btnSettings" class="icon-btn" aria-label="Einstellungen">⚙️</button>
 </header>
 
@@ -34,6 +35,8 @@
     <input id="fTitle" class="title-input" placeholder="Was ist zu tun?" autocomplete="off" required>
     <div class="field-label">Kategorie</div>
     <div id="fCats" class="cat-pick"></div>
+    <div class="field-label">Status</div>
+    <div id="fStatus" class="cat-pick"></div>
     <div class="row">
       <label>Datum<input type="date" id="fDate"></label>
       <label>Uhrzeit<input type="time" id="fTime"></label>
