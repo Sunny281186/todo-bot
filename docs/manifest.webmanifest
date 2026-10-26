@@ -1,7 +1,6 @@
 {
   "name": "Meine To-Dos",
   "short_name": "To-Dos",
-  "start_url": "./",
   "scope": "./",
   "display": "standalone",
   "background_color": "#fdf6f9",

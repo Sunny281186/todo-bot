@@ -46,6 +46,27 @@ function writeLS(key, value) {
 }
 let data = readLS("todo-data", { version: 1, todos: [] });
 let cfg = readLS("todo-cfg", { token: "", gistId: "", local: false });
+
+// Verbindung aus der Adresse (#verbindung=…) übernehmen. Auf dem iPhone hat die App auf dem Home-Bildschirm
+// einen eigenen Speicher ohne Token – so bringt das Symbol die Verbindung bei jedem Start selbst mit.
+// Was hinter # steht, wird nie an einen Server geschickt.
+const SETUP_KEY = "verbindung";
+function setupFromUrl() {
+  const m = location.hash.match(new RegExp(`${SETUP_KEY}=([\\w-]+)`));
+  if (!m) return;
+  try {
+    const { t, g } = JSON.parse(atob(m[1].replace(/-/g, "+").replace(/_/g, "/")));
+    if (t && g && (t !== cfg.token || g !== cfg.gistId)) {
+      cfg = { token: t, gistId: g, local: false };
+      writeLS("todo-cfg", cfg);
+    }
+  } catch {}
+}
+function setupUrl() {
+  const code = btoa(JSON.stringify({ t: cfg.token, g: cfg.gistId })).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+  return `${location.origin}${location.pathname}#${SETUP_KEY}=${code}`;
+}
+setupFromUrl();
 let view = { mode: "list", ...readLS("todo-view", { area: "all", cat: "" }) };
 let showDone = false;
 let editing = null;
@@ -374,6 +395,7 @@ function showSettingsStatus() {
     : "Noch nicht verbunden.";
   // verbunden: nur noch „Schließen“ nötig; „Verbinden“ bleibt zum Wechseln des Tokens
   $("#btnLocal").hidden = !!cfg.gistId;
+  $("#homeSetup").hidden = !cfg.gistId;
   $("#btnConnect").textContent = cfg.gistId ? "Neu verbinden" : "Verbinden";
 }
 
@@ -457,6 +479,10 @@ $("#dlgTodo").addEventListener("close", () => { editing = null; });
 
 $("#btnSettings").addEventListener("click", openSettings);
 $("#btnCloseSettings").addEventListener("click", () => $("#dlgSettings").close());
+$("#btnHomeSetup").addEventListener("click", () => {
+  history.replaceState(null, "", setupUrl());
+  $("#homeHint").hidden = false;
+});
 // Klick neben das Fenster schließt es
 for (const dlg of [$("#dlgSettings"), $("#dlgTodo")]) {
   dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
