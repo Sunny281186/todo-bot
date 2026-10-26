@@ -189,14 +189,23 @@ def gemini_candidates():
 _gemini_ok = None  # Modell, das schon funktioniert hat
 
 
-def transcribe(file_id):
+# Dateiendung -> Format, falls Telegram keins mitschickt (Sprachnachrichten sind meist .oga/.ogg)
+AUDIO_TYPES = {"oga": "audio/ogg", "ogg": "audio/ogg", "opus": "audio/ogg", "m4a": "audio/mp4", "mp4": "audio/mp4",
+               "aac": "audio/aac", "mp3": "audio/mpeg", "wav": "audio/wav", "flac": "audio/flac"}
+NOT_UNDERSTOOD = "???"
+
+
+def transcribe(file_id, mime=None):
     global _gemini_ok
     info = requests.get(f"{TG}/getFile", params={"file_id": file_id}, timeout=30).json()
     path = info["result"]["file_path"]
     audio = requests.get(f"https://api.telegram.org/file/bot{TG_TOKEN}/{path}", timeout=60).content
+    mime = mime or AUDIO_TYPES.get(path.rsplit(".", 1)[-1].lower(), "audio/ogg")
+    print(f"Sprachnachricht: {len(audio) // 1024} KB, {mime}", flush=True)  # Inhalt nie ins (oeffentliche) Protokoll
     body = {"contents": [{"parts": [
-        {"text": "Schreibe diese deutsche Sprachnachricht wortgetreu auf. Gib nur den Text aus."},
-        {"inline_data": {"mime_type": "audio/ogg", "data": base64.b64encode(audio).decode()}},
+        {"text": "Schreibe diese deutsche Sprachnachricht wortgetreu auf. Gib nur den Text aus. "
+                 f"Wenn du nichts verstehst, antworte nur mit {NOT_UNDERSTOOD}"},
+        {"inline_data": {"mime_type": mime, "data": base64.b64encode(audio).decode()}},
     ]}]}
     last = None
     for model in ([_gemini_ok] if _gemini_ok else gemini_candidates()[:4]):
@@ -206,9 +215,11 @@ def transcribe(file_id):
                 headers={"x-goog-api-key": GEMINI_KEY}, json=body, timeout=40,
             )
             r.raise_for_status()
-            text = r.json()["candidates"][0]["content"]["parts"][0]["text"].strip()
+            parts = r.json()["candidates"][0]["content"]["parts"]
+            # neuere Modelle schicken teils Denk-Abschnitte mit - nur den eigentlichen Text nehmen
+            text = " ".join(p["text"] for p in parts if p.get("text") and not p.get("thought")).strip()
             _gemini_ok = model
-            print("Gemini-Modell:", model, flush=True)
+            print("Gemini-Modell:", model, "-", len(text), "Zeichen", flush=True)
             return text
         except Exception as e:
             print(f"Gemini {model} ging nicht: {e!r}", flush=True)
@@ -321,7 +332,11 @@ def handle(msg):
 
     voice = msg.get("voice") or msg.get("audio")
     if voice:
-        text = transcribe(voice["file_id"])
+        text = transcribe(voice["file_id"], voice.get("mime_type"))
+        if len(text) < 3 or text.strip(" .!?").lower() in ("", "unknown", "unbekannt"):
+            tg_send(chat_id, "🎤 Ich konnte die Sprachnachricht leider nicht verstehen. "
+                             "Sprich sie bitte nochmal ein oder schreib mir das To-Do.")
+            return
         tg_send(chat_id, f"🎤 Verstanden: {text}")
     if not text:
         return

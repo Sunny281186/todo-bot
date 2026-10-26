@@ -36,6 +36,9 @@ App und Bot lesen und schreiben dieselbe Datei.
 4. App öffnen → Token eintragen → **Verbinden**. Die App legt die geheime Gist an und zeigt dir die **Gist-ID**.
 5. Aufs Handy legen: iPhone → Safari → Teilen → *Zum Home-Bildschirm*; Android → Chrome → ⋮ → *App installieren*.
    Auf weiteren Geräten einfach denselben Token eintragen – die Gist wird automatisch gefunden.
+   **iPhone:** Die Home-Bildschirm-App hat einen eigenen Speicher. Deshalb vorher in Safari ⚙️ →
+   **📱 Für den Home-Bildschirm vorbereiten** tippen, dann erst *Zum Home-Bildschirm*. Das Symbol bringt die Verbindung dann selbst mit.
+   Nach einem neuen Token das Symbol einmal löschen und so neu anlegen.
 
 ### 3. Bot & Erinnerungen
 Repo → Settings → Secrets and variables → **Actions** → diese Secrets anlegen:
