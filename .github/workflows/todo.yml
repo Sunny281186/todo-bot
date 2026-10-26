@@ -21,7 +21,7 @@ jobs:
           GEMINI_MODEL: gemini-3.5-flash
           TELEGRAM_TOKEN: ${{ secrets.TELEGRAM_TOKEN }}
           TELEGRAM_CHAT_ID: ${{ secrets.TELEGRAM_CHAT_ID }}
-          TRELLO_KEY: ${{ secrets.TRELLO_KEY }}
-          TRELLO_TOKEN: ${{ secrets.TRELLO_TOKEN }}
+          GIST_TOKEN: ${{ secrets.GIST_TOKEN }}
+          TODO_GIST_ID: ${{ secrets.TODO_GIST_ID }}
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
