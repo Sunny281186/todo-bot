@@ -361,10 +361,17 @@ async function connect(token, gistId) {
 function openSettings() {
   $("#sToken").value = cfg.token || "";
   $("#sGist").value = cfg.gistId || "";
+  showSettingsStatus();
+  if (!$("#dlgSettings").open) $("#dlgSettings").showModal();
+}
+
+function showSettingsStatus() {
   $("#sStatus").innerHTML = cfg.gistId
     ? `Verbunden ✅<br>Gist-ID für den Bot (Secret <b>TODO_GIST_ID</b>): <code>${esc(cfg.gistId)}</code>`
     : "Noch nicht verbunden.";
-  $("#dlgSettings").showModal();
+  // verbunden: nur noch „Schließen“ nötig; „Verbinden“ bleibt zum Wechseln des Tokens
+  $("#btnLocal").hidden = !!cfg.gistId;
+  $("#btnConnect").textContent = cfg.gistId ? "Neu verbinden" : "Verbinden";
 }
 
 // --- Ereignisse ---------------------------------------------------------------
@@ -446,6 +453,11 @@ $("#btnDelete").addEventListener("click", () => {
 $("#dlgTodo").addEventListener("close", () => { editing = null; });
 
 $("#btnSettings").addEventListener("click", openSettings);
+$("#btnCloseSettings").addEventListener("click", () => $("#dlgSettings").close());
+// Klick neben das Fenster schließt es
+for (const dlg of [$("#dlgSettings"), $("#dlgTodo")]) {
+  dlg.addEventListener("click", (e) => { if (e.target === dlg) dlg.close(); });
+}
 $("#btnLocal").addEventListener("click", () => {
   cfg.local = true;
   writeLS("todo-cfg", cfg);
@@ -460,7 +472,7 @@ $("#settingsForm").addEventListener("submit", async (e) => {
   try {
     await connect(token, $("#sGist").value.trim());
     await sync(true);
-    openSettings();
+    showSettingsStatus();
   } catch (err) {
     $("#sStatus").textContent = "Das hat nicht geklappt (" + err.message + "). Hat der Token das Recht „Gists: Lesen und Schreiben“?";
   }
