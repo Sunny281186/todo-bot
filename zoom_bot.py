@@ -285,8 +285,8 @@ def e(text):
 
 
 def summary_html(s, topic, started, minutes, transcript_link):
-    out = [f"<h1>{e(s['title'])}</h1>",
-           f"<p><b>Zoom-Call:</b> {e(topic)}<br><b>Datum:</b> {started:%d.%m.%Y, %H:%M} Uhr · {minutes} Min.<br>"
+    out = [f"<h1>{e(topic)}</h1>", f"<p><i>{e(s['title'])}</i></p>",
+           f"<p><b>Datum:</b> {started:%d.%m.%Y, %H:%M} Uhr · {minutes} Min.<br>"
            f"<b>Teilnehmer:</b> {e(', '.join(s['participants'])) or '–'}<br>"
            f"<a href=\"{e(transcript_link)}\">Zum vollständigen Transkript</a></p>",
            "<h2>Überblick</h2>", f"<p>{e(s['overview'])}</p>",
@@ -358,7 +358,7 @@ def process(meeting, ztoken, gtoken, root):
             t["due"] = None
     for f in existing:  # halb fertiger Ordner vom letzten Versuch
         drive_trash(gtoken, f["id"])
-    name = re.sub(r"[\\/]", "-", f"{started:%Y-%m-%d %H%M} – {s['title'] or topic}")
+    name = re.sub(r"[\\/]", "-", f"{started:%Y-%m-%d %H%M} – {topic}")  # Name des Zoom-Termins
     folder = drive_folder(gtoken, name, parent=root, props={"zoomUuid": uuid})
     tdoc = drive_doc(gtoken, f"{name} – Transkript", folder["id"], transcript_html(rows, topic, started, source))
     sdoc = drive_doc(gtoken, f"{name} – Zusammenfassung & To-Dos", folder["id"],
@@ -372,7 +372,7 @@ def process(meeting, ztoken, gtoken, root):
             bot.create_card({"title": t["task"], "desc": desc, "due": t["due"] and t["due"] + "T09:00"}, lst)
     if bot.TG_TOKEN and bot.TG_CHAT:
         todos = "\n".join("☐ " + t["task"] for t in s["todos"][:15]) or "Keine To-Dos."
-        bot.tg_send(bot.TG_CHAT, f"📞 {s['title']}\n{started:%d.%m. %H:%M}\n\n{todos}\n\n"
+        bot.tg_send(bot.TG_CHAT, f"📞 {topic}\n{started:%d.%m. %H:%M}\n\n{todos}\n\n"
                                  f"📄 Zusammenfassung: {sdoc['webViewLink']}\n📝 Transkript: {tdoc['webViewLink']}")
     print(f"Abgelegt: {name}", flush=True)
     return True
