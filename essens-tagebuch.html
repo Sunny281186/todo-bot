@@ -125,6 +125,12 @@ textarea.in{resize:vertical;min-height:70px}
   .it-kcal{display:none}
   .macros{gap:8px}
 }
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;border-radius:99px;background:var(--bg);border:1px solid var(--line);font-size:13px}
+.chip .x{width:22px;height:22px;font-size:16px}
+details.prefs>summary{cursor:pointer;font-family:var(--font-display);font-weight:600;font-size:17px}
+details.prefs[open]>summary{margin-bottom:12px}
+.prefs-body{display:flex;flex-direction:column;gap:12px}
 @media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
 </style>
 
@@ -160,6 +166,8 @@ textarea.in{resize:vertical;min-height:70px}
 
   <section aria-label="Mahlzeiten des Tages" id="meals"></section>
 
+  <section class="card" aria-label="Vorlieben" id="prefs"></section>
+
   <p class="foot">Alle Werte sind Schätzungen bzw. Richtwerte und ersetzen keine ärztliche oder ernährungsberaterische Beratung.</p>
 </div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
@@ -193,7 +201,7 @@ function slug(s){
 var S={db:null,sample:null,uid:null,ready:false,date:todayStr(),slot:guessSlot(),tab:'ai',
   meals:[],recents:[],base:[],custom:[],profile:{},goals:{kcal:2000,protein:110,carbs:220,fat:65},
   review:null,sel:null,selMode:'base',selAmt:100,photo:null,photoUrl:null,imgOk:false,
-  busy:false,ctl:null,delId:null,desc:'',quality:'quick',q:''};
+  busy:false,ctl:null,delId:null,desc:'',quality:'quick',q:'',prefs:{meat:3,fish:1,avoid:[]},prefsOpen:false,prefsKey:''};
 var profileRef=null,mealsCol=null,unsubDay=null,toastT=null,delT=null;
 
 /* ---------- Hilfen ---------- */
@@ -221,7 +229,7 @@ function macroLine(m){return r0(m.kcal)+' kcal · E '+r0(m.protein)+' g · K '+r
 
 /* ---------- Start ---------- */
 async function boot(){
-  renderSlot();renderPane();renderSummary();renderMeals();
+  renderSlot();renderPane();renderSummary();renderMeals();renderPrefs();
   var c=window.claude;
   if(!c||!c.use){showBanner('Diese Seite läuft nur innerhalb von Claude. Öffne sie über den Artefakt-Link.');return;}
   var res;
@@ -239,7 +247,9 @@ async function boot(){
   profileRef.onSnapshot(function(snap){
     S.profile=snap.exists?(snap.data()||{}):{};
     if(S.profile.goals)S.goals=Object.assign({},S.goals,S.profile.goals);
+    if(S.profile.prefs)S.prefs=Object.assign({meat:3,fish:1,avoid:[]},S.profile.prefs);
     renderSummary();
+    var pk=JSON.stringify(S.prefs);if(pk!==S.prefsKey){S.prefsKey=pk;renderPrefs();}
   },function(){});
   S.db.doc('meta/basefoods').onSnapshot(function(snap){
     var d=snap.exists?snap.data():null;
@@ -318,6 +328,34 @@ function renderMeals(){
   });
   html+='<div class="legend">E = Eiweiß · K = Kohlenhydrate · F = Fett</div></div>';
   el.innerHTML=html;
+}
+
+/* ---------- Vorlieben ---------- */
+function renderPrefs(){
+  var el=$('#prefs');if(!el)return;
+  var p=S.prefs;
+  function opts(v){var o='<option value="-1"'+(v<0?' selected':'')+'>egal</option>';for(var i=0;i<=14;i++)o+='<option value="'+i+'"'+(v===i?' selected':'')+'>'+i+'× pro Woche</option>';return o;}
+  el.innerHTML='<details class="prefs" id="prefsDet"'+(S.prefsOpen?' open':'')+'><summary>Meine Vorlieben</summary><div class="prefs-body">'+
+    '<div class="row"><label class="field"><span>Fleisch</span><select class="in" id="pMeat">'+opts(p.meat)+'</select></label>'+
+    '<label class="field"><span>Fisch</span><select class="in" id="pFish">'+opts(p.fish)+'</select></label></div>'+
+    '<p class="hint">So oft pro Woche soll Fleisch bzw. Fisch auf dem Teller liegen. Rezeptvorschläge, Wochenplan und Einkaufsliste richten sich später danach.</p>'+
+    '<div class="row"><label class="field"><span>Das möchte ich nicht essen</span><input class="in" id="avoidIn" placeholder="z. B. Koriander, Pilze, Innereien" autocomplete="off"></label><button class="btn" data-act="avoid-add">Hinzufügen</button></div>'+
+    '<div class="chips">'+(p.avoid.length?p.avoid.map(function(a,i){return '<span class="chip">'+esc(a)+'<button class="x" data-act="avoid-del" data-i="'+i+'" aria-label="'+esc(a)+' entfernen">×</button></span>';}).join(''):'<span class="hint">Noch nichts auf der Liste.</span>')+'</div>'+
+    '<p class="hint">Steht ein Lebensmittel hier, warnt dich die App bei Suche und KI-Ergebnissen.</p></div></details>';
+}
+function savePrefs(){
+  if(!profileRef){toast(errMsg({code:'invalid_argument'}));return;}
+  S.prefsKey=JSON.stringify(S.prefs);
+  profileRef.set(Object.assign({},S.profile,{prefs:S.prefs})).then(function(){toast('Vorlieben gespeichert');}).catch(function(e){toast(errMsg(e));});
+}
+function avoidHits(text){
+  var n=norm(text);
+  return S.prefs.avoid.filter(function(a){var t=norm(a).trim();return t.length>=3&&n.indexOf(t)>=0;});
+}
+function warnTag(name){return avoidHits(name).length?' <span class="conf conf-niedrig">meiden</span>':'';}
+function reviewWarn(r){
+  var hits=avoidHits(r.name+' '+r.items.map(function(i){return i.name;}).join(' '));
+  return hits.length?'<p class="note" style="color:var(--warn);font-weight:600">Achtung: enthält vermutlich '+esc(hits.join(', '))+' (steht auf deiner Liste).</p>':'';
 }
 
 /* ---------- Hinzufügen: Rahmen ---------- */
@@ -427,7 +465,7 @@ function renderReview(){
   var r=S.review;
   if(!r){box.innerHTML='';return;}
   box.innerHTML='<div class="review"><div class="rv-head"><input class="in" id="rvName" value="'+esc(r.name)+'" aria-label="Name der Mahlzeit"><span class="conf conf-'+esc(r.confidence)+'">Sicherheit: '+esc(r.confidence)+'</span></div>'+
-    (r.note?'<p class="note">'+esc(r.note)+'</p>':'')+
+    reviewWarn(r)+(r.note?'<p class="note">'+esc(r.note)+'</p>':'')+
     '<ul class="items">'+r.items.map(function(it,i){
       return '<li><span class="it-name">'+esc(it.name)+'</span><span class="it-amt"><input class="in sm" type="number" inputmode="decimal" min="0" step="any" data-amt="'+i+'" value="'+r0(it.amount)+'" aria-label="Menge '+esc(it.name)+'">'+it.unit+'</span><span class="it-kcal" data-kcal="'+i+'">'+r0(it.kcal)+' kcal</span><button class="x" data-act="rv-del" data-i="'+i+'" aria-label="'+esc(it.name)+' entfernen">×</button></li>';
     }).join('')+'</ul>'+
@@ -479,7 +517,7 @@ function searchFoods(q){
 }
 function foodRow(f,idx){
   var por=f.portionG?' · 1 Portion ≈ '+r0(f.portionG)+' '+f.unit:'';
-  return '<li><div class="li-main"><div class="li-name">'+esc(f.name)+'</div><div class="li-sub">'+r0(f.kcal)+' kcal / 100 '+esc(f.unit)+' · E '+r1(f.protein)+' · K '+r1(f.carbs)+' · F '+r1(f.fat)+por+'</div></div><button class="pick" data-act="food-pick" data-i="'+idx+'">Wählen</button></li>';
+  return '<li><div class="li-main"><div class="li-name">'+esc(f.name)+warnTag(f.name)+'</div><div class="li-sub">'+r0(f.kcal)+' kcal / 100 '+esc(f.unit)+' · E '+r1(f.protein)+' · K '+r1(f.carbs)+' · F '+r1(f.fat)+por+'</div></div><button class="pick" data-act="food-pick" data-i="'+idx+'">Wählen</button></li>';
 }
 var lastResults=[];
 function refreshSearch(){
@@ -569,6 +607,13 @@ document.addEventListener('click',function(ev){
     S.goals=g;renderSummary();
     profileRef.set(Object.assign({},S.profile,{goals:g})).then(function(){toast('Ziele gespeichert');}).catch(function(e){toast(errMsg(e));});
   }
+  else if(act==='avoid-add'){
+    var inp=$('#avoidIn');var v=(inp.value||'').trim();
+    if(v.length<3){toast('Bitte mindestens 3 Buchstaben eingeben.');return;}
+    v.split(',').map(function(x){return x.trim();}).filter(function(x){return x.length>=3&&S.prefs.avoid.indexOf(x)<0;}).forEach(function(x){S.prefs.avoid.push(x);});
+    S.prefsOpen=true;renderPrefs();savePrefs();
+  }
+  else if(act==='avoid-del'){S.prefs.avoid.splice(i,1);S.prefsOpen=true;renderPrefs();savePrefs();}
   else if(act==='ai-go')runAI();
   else if(act==='ai-stop'){if(S.ctl)S.ctl.abort();}
   else if(act==='photo-clear'){setPhoto(null);var f=$('#photo');if(f)f.value='';}
@@ -613,7 +658,12 @@ document.addEventListener('change',function(ev){
   if(id==='slot'){S.slot=t.value;}
   else if(id==='quality'){S.quality=t.value;}
   else if(id==='selUnit'){S.selMode=t.value;S.selAmt=(t.value==='portion')?1:100;var a=$('#selAmt');if(a)a.value=S.selAmt;updateSel();}
+  else if(id==='pMeat'||id==='pFish'){S.prefs[id==='pMeat'?'meat':'fish']=Number(t.value);savePrefs();}
   else if(id==='photo'){setPhoto(t.files&&t.files[0]);}
+});
+document.addEventListener('toggle',function(ev){if(ev.target&&ev.target.id==='prefsDet')S.prefsOpen=ev.target.open;},true);
+document.addEventListener('keydown',function(ev){
+  if(ev.key==='Enter'&&ev.target&&ev.target.id==='avoidIn'){ev.preventDefault();var b=$('[data-act="avoid-add"]');if(b)b.click();}
 });
 
 boot();
