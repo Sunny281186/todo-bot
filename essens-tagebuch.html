@@ -137,6 +137,23 @@ details.prefs[open]>summary{margin-bottom:12px}
 .res .kv b{font-family:var(--font-display);font-size:17px;text-align:right}
 .res .kv span{color:var(--muted)}
 .res .forecast{font-weight:600}
+.tip{border:1px solid var(--line);background:var(--accent-soft);border-radius:12px;padding:12px 14px;display:flex;flex-direction:column;gap:6px;font-size:14px}
+.tip p{margin:0}.tip ul{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:3px}
+.wk-head{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+.wk-plot{position:relative;height:130px;display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;border-bottom:1px solid var(--line)}
+.wk-col{position:relative;height:100%}
+.wk-bar{position:absolute;bottom:0;left:18%;right:18%;background:var(--accent);border-radius:6px 6px 0 0}
+.wk-bar.over{background:var(--warn)}
+.wk-val{position:absolute;left:-4px;right:-4px;text-align:center;font-size:11px;color:var(--muted);font-variant-numeric:tabular-nums}
+.wk-goal{position:absolute;left:0;right:0;border-top:2px dashed var(--muted);opacity:.7;pointer-events:none}
+.wk-days{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px;text-align:center;font-size:12px;color:var(--muted);margin-top:4px}
+.wk-days .today{color:var(--ink);font-weight:700}
+.wk-stats{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+.stat{background:var(--bg);border-radius:10px;padding:10px 12px;font-variant-numeric:tabular-nums}
+.stat span{display:block;font-size:12px;color:var(--muted)}
+.stat b{font-family:var(--font-display);font-size:17px}
+.insights{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:5px}
+.ai-out{white-space:pre-wrap;background:var(--accent-soft);border:1px solid var(--line);border-radius:12px;padding:12px 14px;font-size:14px}
 @media (prefers-reduced-motion:reduce){.bar>i{transition:none}}
 </style>
 
@@ -171,6 +188,8 @@ details.prefs[open]>summary{margin-bottom:12px}
   </section>
 
   <section aria-label="Mahlzeiten des Tages" id="meals"></section>
+
+  <section class="card" aria-label="Wochenübersicht" id="week"></section>
 
   <section class="card" aria-label="Körperdaten und Ziel" id="body"></section>
 
@@ -209,7 +228,7 @@ function slug(s){
 var S={db:null,sample:null,uid:null,ready:false,date:todayStr(),slot:guessSlot(),tab:'ai',
   meals:[],recents:[],base:[],custom:[],profile:{},goals:{kcal:2000,protein:110,carbs:220,fat:65},
   review:null,sel:null,selMode:'base',selAmt:100,photo:null,photoUrl:null,imgOk:false,
-  busy:false,ctl:null,delId:null,desc:'',quality:'quick',q:'',prefs:{meat:-1,fish:-1,avoid:[]},prefsOpen:false,prefsKey:'',body:{sex:'',age:'',height:'',weight:'',job:'',pal:1.4,target:'',tempo:0.5},bodyKey:'',bodyOpen:false,bodyInit:false};
+  busy:false,ctl:null,delId:null,desc:'',quality:'quick',q:'',prefs:{meat:-1,fish:-1,avoid:[]},prefsOpen:false,prefsKey:'',body:{sex:'',age:'',height:'',weight:'',job:'',pal:1.4,target:'',tempo:0.5},bodyKey:'',bodyOpen:false,bodyInit:false,weekStart:'',weekMeals:[],weights:[],weekAi:null,weekBusy:false};
 var profileRef=null,mealsCol=null,unsubDay=null,toastT=null,delT=null;
 
 /* ---------- Hilfen ---------- */
@@ -237,7 +256,7 @@ function macroLine(m){return r0(m.kcal)+' kcal · E '+r0(m.protein)+' g · K '+r
 
 /* ---------- Start ---------- */
 async function boot(){
-  renderSlot();renderPane();renderSummary();renderMeals();renderPrefs();renderBody();
+  renderSlot();renderPane();renderSummary();renderMeals();renderPrefs();renderBody();S.weekStart=mondayOf(todayStr());renderWeek();
   var c=window.claude;
   if(!c||!c.use){showBanner('Diese Seite läuft nur innerhalb von Claude. Öffne sie über den Artefakt-Link.');return;}
   var res;
@@ -260,6 +279,7 @@ async function boot(){
     var pk=JSON.stringify(S.prefs);if(pk!==S.prefsKey){S.prefsKey=pk;renderPrefs();}
     if(S.profile.body){var bk=skey(S.profile.body);if(bk!==S.bodyKey){S.bodyKey=bk;S.body=Object.assign({},S.body,S.profile.body);renderBody();}}
     if(!S.bodyInit){S.bodyInit=true;if(!S.profile.body){S.bodyOpen=true;renderBody();}}
+    renderWeek();
   },function(){});
   S.db.doc('meta/basefoods').onSnapshot(function(snap){
     var d=snap.exists?snap.data():null;
@@ -276,6 +296,11 @@ async function boot(){
     refreshSearch();
   },function(){});
   subDay();
+  subWeek();
+  profileRef.collection('weights').orderBy('date','desc').limit(60).onSnapshot(function(snap){
+    S.weights=snap.docs.map(function(d){return d.data();}).sort(function(a,b){return a.date<b.date?1:-1;});
+    renderWeek();
+  },function(){});
   renderPane();
 }
 function skey(o){return JSON.stringify(Object.keys(o||{}).sort().map(function(k){return [k,o[k]];}));}
@@ -311,6 +336,7 @@ function renderSummary(){
     '<div class="kcal-left'+(over?' over':'')+'">'+(over?r0(-left)+' kcal über dem Ziel':'noch '+r0(left)+' kcal übrig')+'</div></div>'+
     '<div class="bar" role="progressbar" aria-valuemin="0" aria-valuemax="'+r0(g.kcal)+'" aria-valuenow="'+r0(t.kcal)+'" aria-label="Kalorien"><i class="'+(over?'over':'')+'" style="width:'+pct+'%"></i></div>'+
     '<div class="macros">'+mac('p','Eiweiß',t.protein,g.protein)+mac('c','Kohlenh.',t.carbs,g.carbs)+mac('f','Fett',t.fat,g.fat)+'</div>'+
+    overTip(t)+
     '<details class="goals"'+(open?' open':'')+'><summary>Tagesziele anpassen</summary>'+
     '<div class="goal-grid">'+
     '<label class="field"><span>Kalorien (kcal)</span><input class="in" id="gKcal" type="number" inputmode="numeric" min="0" value="'+r0(g.kcal)+'"></label>'+
@@ -344,6 +370,161 @@ function renderMeals(){
   });
   html+='<div class="legend">E = Eiweiß · K = Kohlenhydrate · F = Fett</div></div>';
   el.innerHTML=html;
+}
+
+/* ---------- Ausgleich-Tipp ---------- */
+function overTip(t){
+  var over=t.kcal-S.goals.kcal;
+  if(over<100)return '';
+  var wk=num(S.body.weight),known=wk>0,w=known?wk:70;
+  var acts=[['Zügiges Gehen (ca. 6 km/h)',4.3],['Radfahren locker (14–16 km/h)',5.8],['Joggen locker',7]];
+  var lis=acts.map(function(a){
+    var min=over/((a[1]-1)*w)*60;
+    min=Math.max(5,Math.round(min/5)*5);
+    return '<li><b>'+(min>=90?(Math.floor(min/60)+' Std. '+(min%60?min%60+' Min.':'')):min+' Min.')+'</b> '+esc(a[0])+'</li>';
+  }).join('');
+  return '<div class="tip"><p><b>Heute '+r0(over)+' kcal über dem Ziel.</b> Drei Möglichkeiten, das auszugleichen:</p><ul>'+lis+'</ul>'+
+    '<p class="hint">Du musst das nicht heute ausgleichen'+(over>500?', verteile es gern auf zwei bis drei Tage':'')+'. Entscheidend ist die Woche, nicht ein einzelner Tag. Grobe Schätzung für '+(known?fmt(w)+' kg Körpergewicht':'70 kg, trage dein Gewicht unter Körperdaten ein')+'.</p></div>';
+}
+
+/* ---------- Wochenübersicht ---------- */
+var DAYS=['Mo','Di','Mi','Do','Fr','Sa','So'],DAYN=['Montag','Dienstag','Mittwoch','Donnerstag','Freitag','Samstag','Sonntag'];
+var unsubWeek=null;
+function parseD(s){var p=s.split('-').map(Number);return new Date(p[0],p[1]-1,p[2]);}
+function mondayOf(s){var d=parseD(s);return shiftDate(s,-((d.getDay()+6)%7));}
+function daysBetween(a,b){return Math.round((parseD(b)-parseD(a))/864e5);}
+function weekLabel(){
+  var o={day:'numeric',month:'short'};
+  var cur=S.weekStart===mondayOf(todayStr());
+  return (cur?'Diese Woche · ':'')+parseD(S.weekStart).toLocaleDateString('de-DE',o)+' – '+parseD(shiftDate(S.weekStart,6)).toLocaleDateString('de-DE',o);
+}
+function subWeek(){
+  if(!mealsCol)return;
+  if(unsubWeek)unsubWeek();
+  unsubWeek=mealsCol.where('date','>=',S.weekStart).where('date','<=',shiftDate(S.weekStart,6)).onSnapshot(function(snap){
+    S.weekMeals=snap.docs.map(function(d){var o=d.data();o.id=d.id;return o;});
+    renderWeek();
+  },function(){});
+}
+function weekStats(){
+  var days=[],by={},i;
+  for(i=0;i<7;i++)days.push(shiftDate(S.weekStart,i));
+  days.forEach(function(d){by[d]=[];});
+  S.weekMeals.forEach(function(m){if(by[m.date])by[m.date].push(m);});
+  var tot=days.map(function(d){return totals(by[d]);});
+  var idx=[];days.forEach(function(d,i){if(by[d].length&&d!==todayStr())idx.push(i);});
+  var n=idx.length,sum={kcal:0,protein:0,carbs:0,fat:0};
+  idx.forEach(function(i){sum.kcal+=tot[i].kcal;sum.protein+=tot[i].protein;sum.carbs+=tot[i].carbs;sum.fat+=tot[i].fat;});
+  var avg=n?{kcal:sum.kcal/n,protein:sum.protein/n,carbs:sum.carbs/n,fat:sum.fat/n}:null;
+  var over=idx.filter(function(i){return tot[i].kcal>S.goals.kcal*1.05;}).length;
+  var slot={};SLOTS.forEach(function(x){slot[x]=0;});
+  idx.forEach(function(i){by[days[i]].forEach(function(m){var k=m.slot||SLOTS[3];slot[k]=(slot[k]||0)+(m.kcal||0);});});
+  var meat=0,fish=0;
+  S.weekMeals.forEach(function(m){if(m.cat==='fleisch'||m.cat==='beides')meat++;if(m.cat==='fisch'||m.cat==='beides')fish++;});
+  var maxI=-1;idx.forEach(function(i){if(maxI<0||tot[i].kcal>tot[maxI].kcal)maxI=i;});
+  return {days:days,by:by,tot:tot,idx:idx,n:n,sum:sum,avg:avg,over:over,slot:slot,meat:meat,fish:fish,maxI:maxI};
+}
+function weekInsights(st){
+  var out=[],g=S.goals;
+  if(st.n<2)return ['Trage ein paar Tage ein, dann erkenne ich hier Muster. Der heutige Tag fließt erst morgen in die Auswertung ein.'];
+  out.push(st.over===0?'An allen '+st.n+' ausgewerteten Tagen hast du dein Kalorienziel eingehalten.':'An '+st.over+' von '+st.n+' ausgewerteten Tagen lagst du über deinem Kalorienziel.');
+  if(g.protein>0){
+    if(st.avg.protein<g.protein*0.85)out.push('Dein Eiweiß lag im Schnitt bei '+r0(st.avg.protein)+' g, dein Ziel ist '+r0(g.protein)+' g. Quark, Skyr, Eier, Tofu oder Hülsenfrüchte helfen, satt zu bleiben.');
+    else out.push('Mit durchschnittlich '+r0(st.avg.protein)+' g Eiweiß bist du nah an deinem Ziel von '+r0(g.protein)+' g.');
+  }
+  if(st.sum.kcal>0){
+    var sn=st.slot[SLOTS[3]]/st.sum.kcal,ab=st.slot[SLOTS[2]]/st.sum.kcal;
+    if(sn>0.25)out.push('Snacks machen '+r0(sn*100)+' % deiner Kalorien aus. Hier steckt am meisten Spielraum.');
+    else if(ab>0.45)out.push('Fast die Hälfte deiner Kalorien ('+r0(ab*100)+' %) kommt abends. Ein größeres Mittagessen kann Heißhunger am Abend dämpfen.');
+  }
+  var wk=st.idx.filter(function(i){return i<5;}),we=st.idx.filter(function(i){return i>=5;});
+  if(wk.length>=2&&we.length>=1){
+    var a=wk.reduce(function(s2,i){return s2+st.tot[i].kcal;},0)/wk.length,b=we.reduce(function(s2,i){return s2+st.tot[i].kcal;},0)/we.length;
+    if(b>a*1.15)out.push('Am Wochenende isst du im Schnitt '+r0(b-a)+' kcal mehr pro Tag als unter der Woche.');
+    else if(b<a*0.85)out.push('Am Wochenende isst du im Schnitt '+r0(a-b)+' kcal weniger pro Tag als unter der Woche.');
+  }
+  if(st.maxI>=0)out.push('Der kalorienreichste Tag war '+DAYN[st.maxI]+' mit '+r0(st.tot[st.maxI].kcal)+' kcal.');
+  return out.slice(0,5);
+}
+function weightInfo(){
+  var end=shiftDate(S.weekStart,6);
+  var list=S.weights.filter(function(w){return w.date<=end;});
+  if(!list.length)return null;
+  var cur=list[0],prev=null;
+  for(var i=1;i<list.length;i++){if(daysBetween(list[i].date,cur.date)>=6){prev=list[i];break;}}
+  return {cur:cur,prev:prev};
+}
+function renderWeek(){
+  var el=$('#week');if(!el)return;
+  var old=$('#wKg'),keep=old?old.value:'';
+  var st=weekStats(),goal=S.goals.kcal;
+  var max=Math.max(goal*1.25,1);
+  st.tot.forEach(function(t){if(t.kcal>max)max=t.kcal*1.05;});
+  var plot='<div class="wk-plot" role="img" aria-label="Kalorien pro Tag, gestrichelte Linie = Tagesziel">'+
+    st.days.map(function(d,i){
+      var k=st.tot[i].kcal,hh=k/max*100,ov=k>goal*1.05;
+      return '<div class="wk-col">'+(k?'<div class="wk-val" style="bottom:calc('+hh+'% + 2px)">'+r0(k)+'</div><div class="wk-bar'+(ov?' over':'')+'" style="height:'+hh+'%"></div>':'')+'</div>';
+    }).join('')+'<div class="wk-goal" style="bottom:'+(goal/max*100)+'%"></div></div>'+
+    '<div class="wk-days">'+DAYS.map(function(x,i){return '<span'+(st.days[i]===todayStr()?' class="today"':'')+'>'+x+'</span>';}).join('')+'</div>';
+  var stats='';
+  if(st.avg){
+    stats='<div class="wk-stats">'+
+      '<div class="stat"><span>Ø Kalorien pro Tag</span><b>'+r0(st.avg.kcal)+' kcal</b></div>'+
+      '<div class="stat"><span>Tagesziel</span><b>'+r0(goal)+' kcal</b></div>'+
+      '<div class="stat"><span>Ø Eiweiß · Kohlenh. · Fett</span><b>'+r0(st.avg.protein)+' · '+r0(st.avg.carbs)+' · '+r0(st.avg.fat)+' g</b></div>'+
+      '<div class="stat"><span>Ausgewertete Tage</span><b>'+st.n+' von 7</b></div></div>';
+  }
+  var wi=weightInfo(),wtxt='Noch kein Gewicht eingetragen.';
+  if(wi){
+    wtxt='Zuletzt <b>'+fmt1(wi.cur.kg)+' kg</b> ('+parseD(wi.cur.date).toLocaleDateString('de-DE',{day:'numeric',month:'short'})+')';
+    if(wi.prev){var dl=wi.cur.kg-wi.prev.kg;wtxt+=', '+(dl>0?'+':'')+fmt1(dl).replace('-','−')+' kg seit '+parseD(wi.prev.date).toLocaleDateString('de-DE',{day:'numeric',month:'short'});}
+  }
+  var ai=(S.weekAi&&S.weekAi.week===S.weekStart)?'<div class="ai-out" id="weekAiOut">'+esc(S.weekAi.text)+'</div>':'';
+  el.innerHTML='<div class="wk-head"><h2>Wochenübersicht</h2><div class="datenav"><button class="icon-btn" data-act="week-prev" aria-label="Vorherige Woche">‹</button><span class="label" style="min-width:150px;font-size:13px">'+esc(weekLabel())+'</span><button class="icon-btn" data-act="week-next" aria-label="Nächste Woche">›</button></div></div>'+
+    plot+stats+
+    '<div><h3 style="font-size:15px;margin-bottom:6px">Das fällt auf</h3><ul class="insights">'+weekInsights(st).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>'+
+    '<div class="wk-stats"><div class="stat"><span>Mahlzeiten mit Fleisch als Hauptspeise</span><b>'+st.meat+'</b></div><div class="stat"><span>Mahlzeiten mit Fisch als Hauptspeise</span><b>'+st.fish+'</b></div></div>'+
+    '<div class="row"><p class="msg" style="flex:1 1 200px">'+wtxt+'</p><label class="field" style="flex:0 0 110px"><span>Heute gewogen (kg)</span><input class="in" id="wKg" type="number" inputmode="decimal" step="0.1" min="30" max="350"></label><button class="btn" data-act="weigh-save">Eintragen</button></div>'+
+    '<div class="btns"><button class="btn primary" id="weekAiBtn" data-act="week-ai"'+(S.weekBusy?' disabled':'')+'>Persönliche Auswertung mit KI</button></div>'+
+    '<p class="hint" style="margin:0">Die KI-Auswertung verbraucht Credits und startet nur auf Knopfdruck. Alles andere hier rechnet die App selbst.</p>'+ai;
+  var nw=$('#wKg');if(nw&&keep)nw.value=keep;
+}
+async function weekAI(){
+  if(S.weekBusy)return;
+  var st=weekStats();
+  if(st.n<2){toast('Trage zuerst mindestens zwei vollständige Tage ein.');return;}
+  if(!S.sample){toast(errMsg({code:'sampling_disabled'}));return;}
+  var b=S.body,wi=weightInfo();
+  var data={woche:weekLabel(),ausgewerteteTage:st.n,durchschnittProTag:{kcal:r0(st.avg.kcal),eiweiss:r0(st.avg.protein),kohlenhydrate:r0(st.avg.carbs),fett:r0(st.avg.fat)},
+    ziel:{kcal:r0(S.goals.kcal),eiweiss:r0(S.goals.protein),kohlenhydrate:r0(S.goals.carbs),fett:r0(S.goals.fat)},
+    tageUeberZiel:st.over,kalorienProTag:st.idx.map(function(i){return DAYS[i]+': '+r0(st.tot[i].kcal);}),
+    kalorienNachMahlzeit:Object.keys(st.slot).map(function(k){return k+': '+r0(st.slot[k]);}),
+    mahlzeitenMitFleischAlsHauptspeise:st.meat,mahlzeitenMitFischAlsHauptspeise:st.fish,
+    gewicht:wi?{aktuell:wi.cur.kg,vorher:wi.prev?wi.prev.kg:null}:null,
+    zielgewicht:num(b.target)||null,beruf:b.job||null,
+    richtwertFleisch:S.prefs.meat,richtwertFisch:S.prefs.fish};
+  S.weekBusy=true;renderWeek();
+  try{
+    var r=await S.sample('Du bist ein freundlicher, sachlicher Ernährungscoach. Hier sind die Daten einer Ernährungswoche als JSON:\n'+JSON.stringify(data)+
+      '\n\nSchreibe auf Deutsch eine kurze Auswertung (höchstens 160 Wörter) in genau zwei Teilen: "Das fällt auf" (höchstens 3 Stichpunkte mit Zahlen aus den Daten) und "Tipps für nächste Woche" (höchstens 3 konkrete, umsetzbare Stichpunkte). Nenne keine Vorwürfe und stelle keine Diagnosen. Fleisch und Fisch sind nur ein lockerer Richtwert, kommentiere sie nicht. Antworte ohne Markdown-Formatierung, nur mit Zeilenumbrüchen und "-" als Stichpunkt.',{modelTier:'quick'});
+    S.weekAi={week:S.weekStart,text:r.text.trim()};
+  }catch(e){
+    if(!e||e.code!=='cancelled')toast(errMsg(e));
+  }finally{S.weekBusy=false;renderWeek();}
+}
+async function weighSave(){
+  var kg=num(($('#wKg')||{}).value);
+  if(!(kg>=30&&kg<=350)){toast('Bitte ein Gewicht zwischen 30 und 350 kg eintragen.');return;}
+  if(!profileRef){toast(errMsg({code:'invalid_argument'}));return;}
+  try{
+    await profileRef.collection('weights').doc(todayStr()).set({date:todayStr(),kg:kg,ts:Date.now()});
+    if(S.profile.body){
+      var nb=Object.assign({},S.profile.body,{weight:kg});
+      S.bodyKey=skey(nb);S.body=Object.assign({},S.body,{weight:kg});
+      await saveProfile({body:nb});renderBody();
+    }
+    toast('Gewicht eingetragen');
+  }catch(e){toast(errMsg(e));}
 }
 
 /* ---------- Körperdaten & Ziel ---------- */
@@ -448,7 +629,7 @@ function applyBody(){
   var p=calcPlan(S.body);
   if(!p){toast('Bitte zuerst Körperdaten ausfüllen.');return;}
   var g={kcal:r0(p.kcal),protein:r0(p.protein),carbs:r0(p.carbs),fat:r0(p.fat)};
-  S.goals=g;renderSummary();saveBody(g);
+  S.goals=g;renderSummary();renderWeek();saveBody(g);
 }
 
 /* ---------- Vorlieben ---------- */
@@ -460,7 +641,7 @@ function renderPrefs(){
   el.innerHTML='<details class="prefs" id="prefsDet"'+(S.prefsOpen?' open':'')+'><summary>Meine Vorlieben</summary><div class="prefs-body">'+
     '<div class="row"><label class="field"><span>Fleisch (auch Wurst)</span><select class="in" id="pMeat">'+opts(p.meat)+'</select></label>'+
     '<label class="field"><span>Fisch und Meeresfrüchte</span><select class="in" id="pFish">'+opts(p.fish)+'</select></label></div>'+
-    '<p class="hint">Das ist ein Richtwert und kein Muss. Beim Eintragen bekommst du keine Warnung, wenn du mehr isst. Rezeptvorschläge, Wochenplan und Einkaufsliste halten sich aber daran. Als Fisch zählen auch Thunfisch (frisch und aus der Dose), Lachs, Garnelen und andere Meeresfrüchte.</p>'+
+    '<p class="hint">Das ist ein Richtwert und kein Muss. Beim Eintragen bekommst du keine Warnung, wenn du mehr isst. Rezeptvorschläge, Wochenplan und Einkaufsliste halten sich aber daran. Als Fisch zählen auch Thunfisch (frisch und aus der Dose), Lachs, Garnelen und andere Meeresfrüchte. Fleisch und Fisch zählen nur als Hauptspeise, nicht wenn nur etwas Speck, Schinken oder Brühe dabei ist.</p>'+
     '<div class="row"><label class="field"><span>Das möchte ich nicht essen</span><input class="in" id="avoidIn" placeholder="z. B. Koriander, Pilze, Innereien" autocomplete="off"></label><button class="btn" data-act="avoid-add">Hinzufügen</button></div>'+
     '<div class="chips">'+(p.avoid.length?p.avoid.map(function(a,i){return '<span class="chip">'+esc(a)+'<button class="x" data-act="avoid-del" data-i="'+i+'" aria-label="'+esc(a)+' entfernen">×</button></span>';}).join(''):'<span class="hint">Noch nichts auf der Liste.</span>')+'</div>'+
     '<p class="hint">Steht ein Lebensmittel hier, warnt dich die App bei Suche und KI-Ergebnissen.</p></div></details>';
@@ -544,7 +725,7 @@ function aiPrompt(desc){
   (desc?'Beschreibung des Nutzers: "'+desc+'". Mengen und Zutaten aus der Beschreibung haben Vorrang vor dem, was du im Bild schätzt.\n':'\n')+
   'Zerlege die Mahlzeit in Bestandteile mit realistischer Menge in g oder ml. Rechne übliche Zutaten wie Öl, Zucker und Soße mit ein, besonders bei thailändischen Gerichten. '+
   'Antworte NUR mit einem JSON-Objekt in diesem Format: {"name":"kurzer deutscher Name","confidence":"hoch|mittel|niedrig","cat":"fleisch|fisch|beides|keins","note":"höchstens ein Satz zu Unsicherheit oder Annahmen","items":[{"name":"Bestandteil","amount":150,"unit":"g","kcal":200,"protein":10.5,"carbs":20,"fat":8}]}. '+
-  'kcal, protein, carbs und fat gelten für die angegebene Menge des Bestandteils, nicht pro 100 g. Maximal 8 Bestandteile. cat sagt, ob die Mahlzeit Fleisch (auch Wurst, Speck, Fleischbrühe), Fisch oder Meeresfrüchte (auch Thunfisch) enthält, beides oder keins von beidem.';
+  'kcal, protein, carbs und fat gelten für die angegebene Menge des Bestandteils, nicht pro 100 g. Maximal 8 Bestandteile. cat sagt, ob Fleisch (auch Wurst) oder Fisch bzw. Meeresfrüchte (auch Thunfisch) die Hauptspeise sind: fleisch, fisch, beides oder keins. Ein bisschen Speck, Schinken, Brühe oder eine kleine Fleischfüllung zählt nicht, dann ist cat keins.';
 }
 function normItems(arr){
   if(!Array.isArray(arr))return [];
@@ -737,6 +918,9 @@ document.addEventListener('click',function(ev){
     S.prefsOpen=true;renderPrefs();savePrefs();
   }
   else if(act==='avoid-del'){S.prefs.avoid.splice(i,1);S.prefsOpen=true;renderPrefs();savePrefs();}
+  else if(act==='week-prev'||act==='week-next'){S.weekStart=shiftDate(S.weekStart,act==='week-prev'?-7:7);S.weekMeals=[];renderWeek();subWeek();}
+  else if(act==='week-ai')weekAI();
+  else if(act==='weigh-save')weighSave();
   else if(act==='body-save')saveBody(null);
   else if(act==='body-apply')applyBody();
   else if(act==='ai-go')runAI();
