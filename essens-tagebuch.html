@@ -72,7 +72,7 @@ h3{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
 .rc-sub{margin-top:8px;font-size:13px;font-weight:700;color:var(--muted)}
 .ring.sm .rc-num{font-size:24px;letter-spacing:-.02em}
 .rc-unit{margin-top:3px;font-size:11px;font-weight:700;color:var(--muted)}
-.hero-stats{display:grid;grid-template-columns:1fr 1fr;text-align:center}
+.hero-stats{display:grid;grid-template-columns:1fr 1fr 1fr;text-align:center}
 .hero-stats div+div{border-left:1px solid var(--line)}
 .hero-stats span{display:block;font-size:12px;color:var(--muted);font-weight:700}
 .hero-stats b{font-family:var(--font-display);font-size:22px;font-variant-numeric:tabular-nums}
@@ -120,7 +120,7 @@ h3{font-size:12px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;
 .dock{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;justify-content:center;align-items:center;gap:12px;padding:12px max(16px,env(safe-area-inset-right,0px)) calc(14px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px));pointer-events:none}
 .dock>*{pointer-events:auto}
 .tabbar{display:flex;gap:4px;padding:6px;border-radius:999px;background:color-mix(in srgb,var(--surface) 84%,transparent);-webkit-backdrop-filter:blur(20px) saturate(1.5);backdrop-filter:blur(20px) saturate(1.5);border:1px solid var(--line);box-shadow:0 14px 34px rgba(8,12,24,.16)}
-.tb{display:flex;align-items:center;gap:8px;height:48px;padding:0 15px;border-radius:999px;border:0;background:transparent;color:var(--muted);font-weight:800;font-size:14px}
+.tb{display:flex;align-items:center;gap:8px;height:48px;padding:0 13px;border-radius:999px;border:0;background:transparent;color:var(--muted);font-weight:800;font-size:14px}
 .tb .lbl{display:none}
 .tb[aria-selected="true"]{background:var(--ink);color:var(--bg)}
 .tb[aria-selected="true"] .lbl{display:inline}
@@ -240,10 +240,63 @@ select.in{appearance:none;-webkit-appearance:none;padding-right:40px;background-
 
 #toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(100px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:11px 18px;border-radius:14px;font-weight:700;font-size:14px;z-index:60;max-width:90vw;text-align:center}
 
+
+/* Training */
+.subnav{display:flex;gap:8px;overflow-x:auto;scrollbar-width:none;margin-inline:-16px;padding-inline:16px}
+.subnav::-webkit-scrollbar{display:none}
+.sn{padding:10px 16px;border-radius:999px;border:1.5px solid var(--line);background:var(--surface);font-weight:800;font-size:14px;white-space:nowrap;color:var(--muted)}
+.sn[aria-selected="true"]{background:var(--ink);border-color:var(--ink);color:var(--bg)}
+.chiprow{display:flex;flex-wrap:wrap;gap:8px}
+.chipbtn{padding:9px 14px;border-radius:999px;border:1.5px solid var(--line);background:transparent;font-weight:700;font-size:13.5px}
+.chipbtn[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.muscles{display:flex;flex-wrap:wrap;gap:6px}
+.muscle{font-size:11.5px;font-weight:700;padding:3px 9px;border-radius:99px;background:var(--surface-2);color:var(--muted)}
+.muscle.main{background:var(--accent-soft);color:var(--accent)}
+.ex-item{display:flex;flex-direction:column;gap:10px;padding:16px 0;border-top:1px solid var(--line)}
+.ex-item:first-child{border-top:0;padding-top:4px}
+.ex-head{display:flex;justify-content:space-between;align-items:flex-start;gap:10px}
+.ex-name{font-weight:800;font-size:16px;overflow-wrap:anywhere}
+.ex-rx{font-size:13px;color:var(--muted);font-weight:700;font-variant-numeric:tabular-nums}
+.lvseg{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:4px;padding:3px;border-radius:13px;background:var(--surface-2)}
+.lvseg button{border:0;background:transparent;border-radius:10px;padding:9px 2px;font-size:12.5px;font-weight:800;color:var(--muted)}
+.lvseg button[aria-pressed="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 3px rgba(0,0,0,.14)}
+.mini{display:inline-block;border:0;background:var(--surface-2);border-radius:11px;padding:8px 12px;font-size:12.5px;font-weight:800;color:var(--ink);text-decoration:none}
+.mini:hover{background:var(--accent-soft);color:var(--accent)}
+.how{font-size:14px;color:var(--muted);margin:0}
+.equip-grid{display:flex;flex-wrap:wrap;gap:8px}
+.restr-row{display:flex;flex-direction:column;gap:8px;padding:12px 0;border-top:1px solid var(--line)}
+.restr-row:first-of-type{border-top:0}
+.plan-week>*+*{margin-top:0}
+.plan-week{display:flex;flex-direction:column;gap:8px}
+.plan-day{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;text-align:left;padding:13px 14px;border-radius:16px;border:1.5px solid var(--line);background:var(--surface);color:var(--ink);font-size:14px}
+.plan-day.today{border-color:var(--accent)}
+.plan-day.done{background:var(--accent-soft)}
+.plan-day>span:last-child{font-size:12.5px;font-weight:800;color:var(--muted);white-space:nowrap}
+.story>*+*{margin-top:0}
+.story{display:flex;flex-direction:column;gap:12px}
+.story dl{margin:0;display:flex;flex-direction:column;gap:10px}
+.story dt{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.story dd{margin:2px 0 0}
+.player{position:fixed;inset:0;z-index:90;background:var(--bg);display:flex;flex-direction:column;gap:16px;overflow-y:auto;padding:max(16px,env(safe-area-inset-top,0px)) max(16px,env(safe-area-inset-right,0px)) calc(20px + env(safe-area-inset-bottom,0px)) max(16px,env(safe-area-inset-left,0px))}
+.player>*{width:100%;max-width:560px;margin-inline:auto}
+.p-top{display:flex;align-items:center;gap:12px}
+.p-prog{flex:1;height:8px;border-radius:99px;background:var(--surface-2);overflow:hidden}
+.p-prog i{display:block;height:100%;background:var(--kcal);border-radius:99px;transition:width .3s}
+.p-body{display:flex;flex-direction:column;gap:16px;align-items:center;text-align:center;flex:1;justify-content:center}
+.p-body .muscles{justify-content:center}
+.p-body .stats{width:100%;text-align:left}
+.p-body .ex-item{width:100%;text-align:left}
+.p-title{font-size:30px}
+.p-reps{padding:26px 0}
+.p-controls{display:flex;flex-direction:column;gap:12px}
+.p-controls .chiprow{justify-content:center}
+.ring.rest{--c:var(--protein)}
+
 @media (max-width:380px){
   .items li{grid-template-columns:minmax(0,1fr) auto 32px}
   .it-kcal{display:none}
-  .tb{padding:0 12px}
+  .tb{padding:0 10px}
+  .tabbar{gap:2px}
 }
 @media (prefers-reduced-motion:reduce){
   .ring .arc,.ring .lap,.sheet,.scrim,.fab{transition:none}
@@ -267,6 +320,7 @@ select.in{appearance:none;-webkit-appearance:none;padding-right:40px;background-
   <section class="view" id="v-heute" aria-label="Heute">
     <section class="card hero" id="hero" aria-label="Tagesübersicht"></section>
     <div id="tip"></div>
+    <div id="trainCard"></div>
     <div id="meals" class="view"></div>
   </section>
 
@@ -274,11 +328,15 @@ select.in{appearance:none;-webkit-appearance:none;padding-right:40px;background-
     <div id="week" class="view"></div>
   </section>
 
+  <section class="view" id="v-training" aria-label="Training" hidden>
+    <div class="subnav" id="subnav" role="tablist"></div>
+    <div id="tcontent" class="view"></div>
+  </section>
+
   <section class="view" id="v-profil" aria-label="Profil" hidden>
     <section class="card" id="body" aria-label="Körperdaten und Ziel"></section>
     <section class="card" id="goalsCard" aria-label="Tagesziele"></section>
     <section class="card" id="prefs" aria-label="Vorlieben"></section>
-    <p class="foot">Alle Werte sind Schätzungen bzw. Richtwerte und ersetzen keine ärztliche oder ernährungsberaterische Beratung.</p>
   </section>
 </div>
 
@@ -286,6 +344,7 @@ select.in{appearance:none;-webkit-appearance:none;padding-right:40px;background-
   <div class="tabbar" role="tablist">
     <button class="tb" role="tab" data-view="heute" aria-selected="true" aria-label="Heute"><span data-ico="ring" data-size="22"></span><span class="lbl">Heute</span></button>
     <button class="tb" role="tab" data-view="woche" aria-selected="false" aria-label="Woche"><span data-ico="chart" data-size="22"></span><span class="lbl">Woche</span></button>
+    <button class="tb" role="tab" data-view="training" aria-selected="false" aria-label="Training"><span data-ico="dumbbell" data-size="22"></span><span class="lbl">Training</span></button>
     <button class="tb" role="tab" data-view="profil" aria-selected="false" aria-label="Profil"><span data-ico="user" data-size="22"></span><span class="lbl">Profil</span></button>
   </div>
   <button class="fab" data-act="open-add" aria-label="Mahlzeit hinzufügen"><span data-ico="plus" data-size="28"></span></button>
@@ -306,6 +365,7 @@ select.in{appearance:none;-webkit-appearance:none;padding-right:40px;background-
   </div>
   <div id="pane"></div>
 </div>
+<div class="player" id="player" role="dialog" aria-modal="true" aria-label="Workout" hidden></div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
 
 <script>
@@ -366,7 +426,8 @@ var S={db:null,sample:null,uid:null,ready:false,view:'heute',date:todayStr(),slo
   busy:false,ctl:null,delId:null,desc:'',quality:'quick',q:'',
   prefs:{meat:-1,fish:-1,avoid:[]},prefsKey:'',goalsKey:'',
   body:{sex:'',age:'',height:'',weight:'',job:'',pal:1.4,target:'',tempo:0.5},bodyKey:'',bodyInit:false,
-  weekStart:'',weekMeals:[],weights:[],weekAi:null,weekBusy:false};
+  weekStart:'',weekMeals:[],weights:[],weekAi:null,weekBusy:false,
+  fit:null,fitKey:'',lib:[],libById:{},styles:[],sessions:[],draft:null,tsub:'workout',exf:{q:'',reg:'',style:'',only:true,limit:30},exOpen:'',calc:{act:0,min:30,extra:350},altOpen:-1,player:false};
 var profileRef=null,mealsCol=null,unsubDay=null,unsubWeek=null,toastT=null,delT=null,lastFocus=null,lastResults=[];
 
 /* ---------- Hilfen ---------- */
@@ -414,7 +475,7 @@ function mring(id,cls,name){
 function buildHero(){
   var h=$('#hero');
   h.innerHTML=ringMarkup('K','big','<span class="rc-num" id="kLeft">0</span><span class="rc-sub" id="kSub">kcal übrig</span>')+
-    '<div class="hero-stats"><div><span>Gegessen</span><b id="kEaten">0</b></div><div><span>Tagesziel</span><b id="kGoal">0</b></div></div>'+
+    '<div class="hero-stats"><div><span>Gegessen</span><b id="kEaten">0</b></div><div><span>Training</span><b id="kTrain">0</b></div><div><span>Tagesziel</span><b id="kGoal">0</b></div></div>'+
     '<div class="macro-rings">'+mring('P','p','Eiweiß')+mring('C','c','Kohlenhydrate')+mring('F','f','Fett')+'</div>';
 }
 function setRing(id,pct){
@@ -432,25 +493,28 @@ function renderHeader(){
     t.textContent=dateLabel(S.date);nav.hidden=false;
   }else if(S.view==='woche'){
     e.textContent=weekLabel();t.textContent='Woche';nav.hidden=false;
+  }else if(S.view==='training'){
+    e.textContent=(S.fit&&S.fit.place)?S.fit.place:'Dein Training';t.textContent='Training';nav.hidden=true;
   }else{
     e.textContent='Dein Plan';t.textContent='Profil';nav.hidden=true;
   }
 }
 function setView(v,push){
-  if(['heute','woche','profil'].indexOf(v)<0)v='heute';
+  if(['heute','woche','training','profil'].indexOf(v)<0)v='heute';
   S.view=v;
-  ['heute','woche','profil'].forEach(function(n){$('#v-'+n).hidden=(n!==v);});
+  ['heute','woche','training','profil'].forEach(function(n){$('#v-'+n).hidden=(n!==v);});
   document.querySelectorAll('.tb').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.view===v));});
   renderHeader();
+  if(v==='training')renderTraining();
   if(push!==false){try{location.hash=v;}catch(e){}}
   window.scrollTo(0,0);
 }
 
 /* ---------- Start ---------- */
 async function boot(){
-  hydrate();buildHero();
+  hydrate();S.fit=defaultFit();buildHero();
   S.weekStart=mondayOf(todayStr());
-  renderSummary();renderMeals();renderWeek();renderBody();renderGoals();renderPrefs();
+  renderSummary();renderMeals();renderWeek();renderBody();renderGoals();renderPrefs();renderTrainCard();
   setView((location.hash||'').slice(1),false);
   var c=window.claude;
   if(!c||!c.use){showBanner('Diese Seite läuft nur innerhalb von Claude. Öffne sie über den Artefakt-Link.');return;}
@@ -470,10 +534,11 @@ async function boot(){
     S.profile=snap.exists?(snap.data()||{}):{};
     if(S.profile.goals)S.goals=Object.assign({},S.goals,S.profile.goals);
     if(S.profile.prefs)S.prefs=Object.assign({meat:-1,fish:-1,avoid:[]},S.profile.prefs);
+    if(S.profile.fit){var ft=Object.assign(defaultFit(),S.profile.fit),fk2=JSON.stringify(ft);if(fk2!==S.fitKey){S.fit=ft;S.fitKey=fk2;S.draft=null;if(S.view==='training'&&!S.player)renderTraining();}}
     var gk=JSON.stringify(S.goals);if(gk!==S.goalsKey){S.goalsKey=gk;renderGoals();}
     var pk=JSON.stringify(S.prefs);if(pk!==S.prefsKey){S.prefsKey=pk;renderPrefs();}
     if(S.profile.body){var bk=skey(S.profile.body);if(bk!==S.bodyKey){S.bodyKey=bk;S.body=Object.assign({},S.body,S.profile.body);renderBody();}}
-    renderSummary();renderWeek();
+    renderSummary();renderWeek();renderTrainCard();
   },function(){});
   S.db.doc('meta/basefoods').onSnapshot(function(snap){
     var d=snap.exists?snap.data():null;
@@ -489,7 +554,7 @@ async function boot(){
     S.recents=snap.docs.map(function(d){var o=d.data();o.id=d.id;return o;});
     refreshSearch();
   },function(){});
-  subDay();subWeek();
+  subDay();subWeek();subTraining();
   profileRef.collection('weights').orderBy('date','desc').limit(60).onSnapshot(function(snap){
     S.weights=snap.docs.map(function(d){return d.data();}).sort(function(a,b){return a.date<b.date?1:-1;});
     renderWeek();
@@ -507,13 +572,14 @@ function subDay(){
 /* ---------- Heute ---------- */
 function renderSummary(){
   var t=totals(S.meals),g=S.goals;
-  var left=g.kcal-t.kcal,over=left<0;
+  var train=burnedFor(S.date),eff=g.kcal+train;
+  var left=eff-t.kcal,over=left<0;
   var k=$('#kLeft');if(!k)return;
   k.textContent=fmt(Math.abs(left));k.style.color=over?'var(--warn)':'';
   $('#kSub').textContent=over?'kcal drüber':'kcal übrig';
   $('#ringK').classList.toggle('over',over);
-  setRing('K',g.kcal>0?t.kcal/g.kcal*100:0);
-  $('#kEaten').textContent=fmt(t.kcal);$('#kGoal').textContent=fmt(g.kcal);
+  setRing('K',eff>0?t.kcal/eff*100:0);
+  $('#kEaten').textContent=fmt(t.kcal);$('#kGoal').textContent=fmt(g.kcal);$('#kTrain').textContent=(train>0?'+':'')+fmt(train);
   [['P',t.protein,g.protein],['C',t.carbs,g.carbs],['F',t.fat,g.fat]].forEach(function(a){
     $('#n'+a[0]).textContent=r0(a[1]);
     $('#of'+a[0]).textContent='von '+r0(a[2])+' g';
@@ -523,7 +589,7 @@ function renderSummary(){
   renderHeader();
 }
 function overTip(t){
-  var over=t.kcal-S.goals.kcal;
+  var over=t.kcal-(S.goals.kcal+burnedFor(S.date));
   if(over<100)return '';
   var wk=num(S.body.weight),known=wk>0,w=known?wk:70;
   var acts=[['Zügiges Gehen',4.3],['Radfahren locker',5.8],['Joggen locker',7]];
@@ -534,7 +600,7 @@ function overTip(t){
     return '<div class="tip-tile"><b>'+txt+'</b><span>'+esc(a[0])+'</span></div>';
   }).join('');
   return '<div class="card tip"><h2>Heute '+r0(over)+' kcal drüber</h2><p class="hint" style="font-size:14px">So könntest du das ausgleichen:</p><div class="tip-grid">'+tiles+'</div>'+
-    '<p class="hint">Du musst das nicht heute ausgleichen'+(over>500?', verteile es gern auf zwei bis drei Tage':'')+'. Entscheidend ist die Woche, nicht ein einzelner Tag. Grobe Schätzung für '+(known?fmt(w)+' kg Körpergewicht':'70 kg, trage dein Gewicht im Profil ein')+'.</p></div>';
+    '<p class="hint">Du musst das nicht heute ausgleichen'+(over>500?', verteile es gern auf zwei bis drei Tage':'')+'. Entscheidend ist die Woche, nicht ein einzelner Tag. Grobe Schätzung für '+(known?fmt(w)+' kg Körpergewicht':'70 kg, trage dein Gewicht im Profil ein')+'.</p><div class="btns"><button class="btn" data-act="t-gotrain">Workout oder Ausgleich planen</button></div></div>';
 }
 function renderMeals(){
   var el=$('#meals');if(!el)return;
@@ -895,10 +961,11 @@ function renderWeek(){
       return '<div class="wk-col">'+(k?'<div class="wk-val" style="bottom:calc('+hh+'% + 4px)">'+r0(k)+'</div><div class="wk-bar'+(ov?' over':'')+'" style="height:'+hh+'%"></div>':'')+'</div>';
     }).join('')+'<div class="wk-goal" style="bottom:'+(goal/max*100)+'%"></div></div>'+
     '<div class="wk-days">'+DAYS.map(function(x,i){return '<span'+(st.days[i]===todayStr()?' class="today"':'')+'>'+x+'</span>';}).join('')+'</div>';
+  var wsd=S.sessions.filter(function(x){return x.done&&x.date>=S.weekStart&&x.date<=shiftDate(S.weekStart,6);}),wsN=wsd.length,wsK=wsd.reduce(function(a,x){return a+(x.kcal||0);},0);
   var stats='';
   if(st.avg){
     stats='<div class="stats"><div class="stat"><span>Ø pro Tag</span><b>'+fmt(st.avg.kcal)+' kcal</b></div><div class="stat"><span>Tagesziel</span><b>'+fmt(goal)+' kcal</b></div>'+
-      '<div class="stat wide"><span>Ø Makros pro Tag</span>'+macroChips(st.avg)+'</div></div>';
+      '<div class="stat wide"><span>Trainings diese Woche</span><b>'+wsN+' × · '+fmt(wsK)+' kcal</b></div><div class="stat wide"><span>Ø Makros pro Tag</span>'+macroChips(st.avg)+'</div></div>';
   }
   var wi=weightInfo(),now='<span class="hint">Noch kein Gewicht eingetragen.</span>';
   if(wi){
@@ -1008,9 +1075,9 @@ function renderBodyResult(){
       h+='<div class="forecast warnbox">Mit diesem Tempo und deinen Daten ergibt sich kein Weg zum Zielgewicht. Wähle ein anderes Tempo oder Ziel.</div>';
     }
     if(p.limited)h+='<p class="hint">Das gewählte Tempo hätte dich unter deinen Grundumsatz gebracht. Ich habe die Kalorien deshalb nach unten begrenzt.</p>';
-    if(p.tbmi<18.5)h+='<p class="note warnnote">Dein Zielgewicht entspricht einem BMI von '+fmt1(p.tbmi)+' und liegt damit im Untergewicht. Bitte sprich das Ziel mit einer Ärztin oder einem Arzt ab.</p>';
+    if(p.tbmi<18.5)h+='<p class="note warnnote">Dein Zielgewicht entspricht einem BMI von '+fmt1(p.tbmi)+' und liegt damit im Untergewicht.</p>';
   }
-  h+='<p class="hint">Berechnung nach Mifflin-St-Jeor. Die Werte sind Schätzungen und ersetzen keine medizinische Beratung.</p>';
+  h+='<p class="hint">Berechnung nach Mifflin-St-Jeor.</p>';
   el.innerHTML=h;
 }
 function renderBody(){
@@ -1092,6 +1159,609 @@ function reviewWarn(r){
   var hits=avoidHits(r.name+' '+r.items.map(function(i){return i.name;}).join(' '));
   return hits.length?'<p class="note warnnote">Achtung: enthält vermutlich '+esc(hits.join(', '))+' (steht auf deiner Liste).</p>':'';
 }
+
+/* ---------- Training: Konstanten ---------- */
+var EQUIP=[['bottle','Wasserflasche (1,5 l)'],['backpack','Rucksack (beladen)'],['dumbbell','Hanteln'],['band','Loop-Band'],['tube','Tube-Band mit Griffen'],['anchor','Türanker'],['sus','Suspension Trainer'],['rope','Springseil'],['chair','Stuhl, Bank oder Sofa'],['wall','Freie Wand'],['stairs','Treppe oder Stufe'],['towel','Handtuch'],['ball','Faszienball'],['roller','Faszienrolle'],['pool','Pool']];
+var PRESETS=[['Nur Körper',[]],['Hotelzimmer',['chair','wall','towel','bottle']],['Hotel mit Pool',['chair','wall','towel','bottle','pool']],['Draußen im Park',['stairs','chair','wall']],['Reise-Set',['band','tube','anchor','rope','bottle','chair','wall','towel']]];
+var RESTR=[['knien','Knien'],['hocke','Tiefe Hocke'],['sprung','Sprünge und Impact'],['handgelenk','Handgelenke'],['schulter','Schultern'],['ruecken','Rücken'],['nacken','Nacken']];
+var RESTRN={knien:'Knie',hocke:'Hocke',sprung:'Sprünge',handgelenk:'Handgelenke',schulter:'Schultern',ruecken:'Rücken',nacken:'Nacken'};
+var REGN={beine:'Beine & Gesäß',brust:'Brust',ruecken:'Rücken',schultern:'Schultern',arme:'Arme',bauch:'Rumpf',ganzkoerper:'Ganzkörper',cardio:'Cardio',mobility:'Beweglichkeit'};
+var FOCUS=[['ganzkoerper','Ganzkörper'],['beine','Beine & Gesäß'],['oberkoerper','Oberkörper'],['rumpf','Rumpf'],['cardio','Cardio'],['mobility','Beweglichkeit']];
+var FOCUS_REG={ganzkoerper:['beine','brust','ruecken','bauch','schultern','cardio','ganzkoerper','arme'],beine:['beine'],oberkoerper:['brust','ruecken','schultern','arme'],rumpf:['bauch'],cardio:['cardio','ganzkoerper'],mobility:['mobility']};
+var LEVELN=['Anfänger','Fortgeschritten','Schwer'];
+var GOALS=[['abnehmen','Abnehmen und Fett verbrennen'],['straffen','Straffen und definieren'],['muskeln','Muskeln aufbauen'],['ausdauer','Ausdauer verbessern'],['beweglich','Beweglicher und rückenfit'],['fit','Allgemein fit bleiben']];
+var GOALTXT={abnehmen:'Fürs Abnehmen: Kraft hält die Muskeln, Cardio verbrennt Kalorien. Ich mische drei Kraft- und zwei bis drei Ausdauertage.',straffen:'Fürs Straffen: Bänder, Pilates und Barre formen Beine, Gesäß und Rumpf.',muskeln:'Für Muskelaufbau: langsame Wiederholungen, schwerere Varianten und Pausen zwischen den Sätzen.',ausdauer:'Für Ausdauer: Intervalle, Pool und Zirkel im Wechsel mit lockeren Tagen.',beweglich:'Für Beweglichkeit und einen fitten Rücken: Yoga, Mobility und Pilates stehen vorn.',fit:'Zum Fitbleiben: ein bunter Mix aus Kraft, Cardio und Beweglichkeit.'};
+var GOALSEQ={abnehmen:['ganzkoerper','cardio','beine','mobility','oberkoerper','cardio'],straffen:['beine','oberkoerper','rumpf','ganzkoerper','mobility','beine'],muskeln:['beine','oberkoerper','rumpf','beine','oberkoerper','ganzkoerper'],ausdauer:['cardio','ganzkoerper','cardio','beine','mobility','cardio'],beweglich:['mobility','rumpf','mobility','ganzkoerper','mobility','rumpf'],fit:['ganzkoerper','cardio','oberkoerper','beine','mobility','rumpf']};
+var GOALSTYLE={abnehmen:{ganzkoerper:'calisthenics',beine:'baender',oberkoerper:'calisthenics',rumpf:'core',cardio:'hiit',mobility:'yoga'},straffen:{ganzkoerper:'zirkel',beine:'baender',oberkoerper:'baender',rumpf:'pilates',cardio:'tanz',mobility:'yoga'},muskeln:{ganzkoerper:'calisthenics',beine:'calisthenics',oberkoerper:'calisthenics',rumpf:'core',cardio:'walking',mobility:'mobility'},ausdauer:{ganzkoerper:'zirkel',beine:'calisthenics',oberkoerper:'zirkel',rumpf:'core',cardio:'hiit',mobility:'yoga'},beweglich:{ganzkoerper:'yoga',beine:'yoga',oberkoerper:'mobility',rumpf:'pilates',cardio:'walking',mobility:'mobility'},fit:{ganzkoerper:'calisthenics',beine:'egal',oberkoerper:'egal',rumpf:'core',cardio:'egal',mobility:'yoga'}};
+var DOWS={2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,4,5],6:[0,1,2,3,4,5]};
+var WEEKADJ=[{ds:-1,fn:1},{ds:0,fn:1},{ds:0,fn:1.15},{ds:-1,fn:0.9}];
+var WEEKNAMES=['Einstieg','Aufbau','Steigerung','Entlastung'];
+var WEEKTEXT=['Etwas weniger Sätze, die Technik sitzt sauber.','Volle Sätze, die Technik festigt sich.','Mehr Wiederholungen und mehr Spannung.','Weniger Umfang, der Körper erholt sich.'];
+var NOWC=['yoga','pilates','mobility','faszien','taichi','schwimmen','walking','pool'];
+var ACTS=[['Zügiges Gehen',4.3],['Radfahren locker',5.8],['Joggen locker',7],['Wassergymnastik',5.3],['Schwimmen locker',6],['Calisthenics',3.8],['Zirkeltraining',6],['HIIT',8],['Yoga',2.5],['Pilates',2.8],['Tanzen',5],['Springseil',10],['Treppensteigen',8]];
+var EXTRAS=[['Stück Kuchen',350],['Stück Torte',450],['Bier 0,5 l',215],['Cocktail',250],['Pizza',800],['Eis (3 Kugeln)',300],['Pommes',400]];
+IC.dumbbell='<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>';
+IC.play='<path d="M8 5.5v13l11-6.5z"/>';
+IC.check='<path d="m5 12.5 4.5 4.5L19 7.5"/>';
+
+function defaultFit(){return {equip:[],place:'',level:1,regionLevel:{},exLevel:{},restr:{},goal:'abnehmen',minutes:30,perWeek:3,plan:null,credit:100,videos:{},sound:true};}
+var fitT=null;
+function saveFit(){
+  S.fitKey=JSON.stringify(S.fit);clearTimeout(fitT);
+  fitT=setTimeout(function(){saveProfile({fit:S.fit}).catch(function(e){toast(errMsg(e));});},500);
+}
+
+/* ---------- Training: Hilfen ---------- */
+function hash(s){var h=2166136261;for(var i=0;i<s.length;i++){h^=s.charCodeAt(i);h=Math.imul(h,16777619);}return h>>>0;}
+function mulberry(seed){var a=seed>>>0;return function(){a=(a+0x6D2B79F5)>>>0;var t=a;t=Math.imul(t^(t>>>15),t|1);t^=t+Math.imul(t^(t>>>7),t|61);return ((t^(t>>>14))>>>0)/4294967296;};}
+function shuffle(arr,rnd){for(var i=arr.length-1;i>0;i--){var j=Math.floor(rnd()*(i+1));var t=arr[i];arr[i]=arr[j];arr[j]=t;}return arr;}
+function exBy(id){return S.libById[id]||null;}
+function styleName(id){if(!id||id==='egal')return 'Egal';var s=S.styles.filter(function(x){return x.id===id;})[0];return s?s.name:id;}
+function focusName(id){var f=FOCUS.filter(function(x){return x[0]===id;})[0];return f?f[1]:id;}
+function eqName(id){var e=EQUIP.filter(function(x){return x[0]===id;})[0];return e?e[1]:id;}
+function eqOK(e){return (e.eq||[]).every(function(req){return req.split('|').some(function(id){return S.fit.equip.indexOf(id)>=0;});});}
+function restrMode(k){return S.fit.restr[k]||'ok';}
+function allowed(e){var fl=e.fl||{};for(var k in fl){if(k==='u')continue;var m=restrMode(k),v=fl[k];if(m==='vermeiden'&&v>=1)return false;if(m==='sparsam'&&v>=2)return false;}return true;}
+function usable(e){return eqOK(e)&&allowed(e);}
+function lvOf(e){var l=S.fit.exLevel[e.id]||S.fit.regionLevel[e.r]||S.fit.level||1;return Math.max(1,Math.min(3,Number(l)||1));}
+function variant(e,lv){var v=e.lv[Math.max(0,Math.min(e.lv.length-1,lv-1))];return {t:v[0],h:v[1],n:v[2],s:v[3]};}
+function kgNow(){return num(S.body.weight)>0?num(S.body.weight):70;}
+function isU(e){return !!(e.fl&&e.fl.u);}
+function itemMet(e,it){return (e.met||4)+0.5*((it.lv||1)-1);}
+function itemSecs(e,it){var u=isU(e)?2:1,work=(e.mode==='time'?it.n*u:it.n*3*u)*it.sets;return {work:work,total:work+(it.sets-1)*35+20};}
+function estKcal(items){var kg=kgNow(),k=0;items.forEach(function(it){var e=exBy(it.id);if(!e)return;var s=itemSecs(e,it);k+=(itemMet(e,it)-1)*kg*s.work/3600+0.5*kg*(s.total-s.work)/3600;});return k;}
+function estMinutes(items){var t=0;items.forEach(function(it){var e=exBy(it.id);if(e)t+=itemSecs(e,it).total;});return Math.max(1,Math.round(t/60));}
+function rxText(e,it){
+  var u=isU(e)?' je Seite':'';
+  if(e.mode==='time'){var t=it.n>=120?(Math.round(it.n/60*10)/10).toLocaleString('de-DE')+' Min.':it.n+' Sek.';return (it.sets>1?it.sets+' × ':'')+t+u;}
+  return it.sets+' × '+it.n+' Wdh.'+u;
+}
+function musclesHtml(e){var rn=REGN[e.r]||e.r;return '<div class="muscles"><span class="muscle main">'+esc(rn)+'</span>'+e.m.filter(function(m){return norm(m)!==norm(rn);}).map(function(m){return '<span class="muscle">'+esc(m)+'</span>';}).join('')+'</div>';}
+function videoUrl(e){return S.fit.videos[e.id]||('https://www.youtube.com/results?search_query='+encodeURIComponent(e.n+' Übung richtig ausführen'));}
+function regionsOf(items){var seen={},out=[];items.forEach(function(it){var e=exBy(it.id);if(e&&!seen[e.r]){seen[e.r]=1;out.push(REGN[e.r]||e.r);}});return out.join(', ');}
+function draftTitle(d){return focusName(d.focus)+(d.style&&d.style!=='egal'?' · '+styleName(d.style):'');}
+function sessionsOn(date){return S.sessions.filter(function(s){return s.date===date&&s.done;});}
+function burnedRaw(date){return sessionsOn(date).reduce(function(a,s){return a+(s.kcal||0);},0);}
+function burnedFor(date){return burnedRaw(date)*((S.fit&&S.fit.credit!=null?S.fit.credit:100))/100;}
+function netK(met,min){return Math.max(0,(met-1)*kgNow()*min/60);}
+function needMin(met,x){var per=(met-1)*kgNow()/60;return per>0?Math.max(5,Math.round(x/per/5)*5):0;}
+function fmtMin(m){return m>=90?Math.floor(m/60)+' Std.'+(m%60?' '+m%60:''):m+' Min.';}
+
+/* ---------- Training: Generator ---------- */
+function makeItem(e,wk){
+  var lv=lvOf(e),v=variant(e,lv),a=WEEKADJ[wk||0]||WEEKADJ[1];
+  var sets=v.s>1?Math.max(2,Math.min(5,v.s+a.ds)):1;
+  var n;
+  if(e.mode==='time'){n=v.n>=120?Math.max(60,Math.round(v.n*a.fn/30)*30):Math.max(10,Math.round(v.n*a.fn/5)*5);}
+  else n=Math.max(4,Math.round(v.n*a.fn));
+  return {id:e.id,lv:lv,sets:sets,n:n};
+}
+function genWorkout(o){
+  var rnd=mulberry(hash((o.date||'')+'|'+o.focus+'|'+o.style+'|'+(o.seed||0)+'|'+(o.week||0)));
+  var minutes=o.minutes||30,wk=o.week||0,style=(o.style&&o.style!=='egal')?o.style:null;
+  var all=S.lib.filter(usable),regs=FOCUS_REG[o.focus]||FOCUS_REG.ganzkoerper;
+  var useWC=minutes>=20&&o.focus!=='mobility'&&(!style||NOWC.indexOf(style)<0);
+  var chosen=[],used={},spar={},total=0;
+  function okSp(e){var fl=e.fl||{};for(var k in fl){if(k==='u')continue;if(fl[k]===1&&restrMode(k)==='sparsam'&&(spar[k]||0)>=1)return false;}return true;}
+  function take(e,role){var fl=e.fl||{};for(var k in fl){if(k==='u')continue;if(fl[k]===1&&restrMode(k)==='sparsam')spar[k]=(spar[k]||0)+1;}used[e.id]=1;var it=makeItem(e,wk);it.role=role;chosen.push(it);total+=itemSecs(e,it).total;}
+  var notPool=function(e){return e.eq.indexOf('pool')<0;};
+  if(useWC){var wu=shuffle(all.filter(function(e){return e.st.indexOf('wu')>=0&&notPool(e)&&okSp(e);}),rnd);if(wu.length)take(wu[0],'warm');}
+  var coolSecs=useWC?(minutes>=30?200:100):0,target=minutes*60;
+  function fill(list,anyReg){
+    list=shuffle(list.slice(),rnd);
+    var ri=0,guard=0,misses=0;
+    while(total<target-coolSecs&&guard<600){
+      guard++;
+      var reg=regs[ri%regs.length];ri++;
+      var cand=list.filter(function(e){return !used[e.id]&&(anyReg||e.r===reg)&&okSp(e);});
+      if(!cand.length){misses++;if(anyReg||misses>=regs.length)break;continue;}
+      misses=0;
+      take(cand[0],'main');
+    }
+  }
+  var cands=all.filter(function(e){return !used[e.id];});
+  var pref=style?cands.filter(function(e){return e.st.indexOf(style)>=0;}):cands;
+  fill(pref);
+  if(style&&total<target-coolSecs)fill(pref,true);
+  if(style&&total<target-coolSecs){var other=cands.filter(function(e){return !used[e.id]&&e.st.indexOf(style)<0;});fill(other.filter(function(e){return regs.indexOf(e.r)>=0;}));}
+  if(chosen.length&&total<(target-coolSecs)*0.75){
+    var g2=0;
+    while(total<(target-coolSecs)*0.9&&g2<60){
+      g2++;var grew=false;
+      chosen.forEach(function(it){
+        if(it.role!=='main'||it.sets>=4||total>=(target-coolSecs)*0.9)return;
+        var e=exBy(it.id);if(!e||(e.mode==='time'&&it.sets===1))return;
+        var before=itemSecs(e,it).total;it.sets++;total+=itemSecs(e,it).total-before;grew=true;
+      });
+      if(!grew)break;
+    }
+  }
+  if(useWC){
+    var cd=shuffle(all.filter(function(e){return e.st.indexOf('cd')>=0&&!used[e.id]&&notPool(e)&&okSp(e);}),rnd);
+    if(cd.length)take(cd[0],'cool');
+    if(minutes>=30&&cd.length>1)take(cd[1],'cool');
+  }
+  return {items:chosen};
+}
+function newDraft(o){
+  var g=genWorkout(o);
+  S.draft={focus:o.focus,style:o.style||'egal',minutes:o.minutes||30,week:o.week||0,seed:o.seed||0,date:o.date||'',planDate:o.planDate||'',reason:o.reason||'',items:g.items};
+}
+function resolveStyle(style){
+  if(!style||style==='egal')return 'egal';
+  var n=S.lib.filter(function(e){return usable(e)&&e.st.indexOf(style)>=0;}).length;
+  return n>=4?style:'egal';
+}
+function goalStyle(goal,focus){
+  if(focus==='cardio'&&S.fit.equip.indexOf('pool')>=0&&(goal==='abnehmen'||goal==='ausdauer'))return 'pool';
+  return (GOALSTYLE[goal]||GOALSTYLE.fit)[focus]||'egal';
+}
+function planDayFor(date){
+  var p=S.fit.plan;if(!p)return null;
+  var d=daysBetween(p.start,date);if(d<0||d>=p.weeks*7)return null;
+  var wk=Math.floor(d/7),dow=d%7;
+  var s=p.sched.filter(function(x){return x.dow===dow;})[0];if(!s)return null;
+  return {date:date,week:wk,focus:s.focus,style:goalStyle(S.fit.goal,s.focus),minutes:p.minutes};
+}
+function recommend(){
+  var today=todayStr(),pd=planDayFor(today);
+  if(pd)return {focus:pd.focus,style:resolveStyle(pd.style),minutes:pd.minutes,week:pd.week,date:today,planDate:today,reason:'Heute laut Plan, Woche '+(pd.week+1)+' von 4 ('+WEEKNAMES[pd.week]+').'};
+  var done=S.sessions.filter(function(s){return s.done&&s.focus;}).slice(0,2).map(function(s){return s.focus;});
+  var cycle=['ganzkoerper','beine','oberkoerper','rumpf','cardio','mobility'];
+  var f=cycle.filter(function(c){return done.indexOf(c)<0;})[0]||'ganzkoerper';
+  var why=done.length?'Zuletzt hast du '+done.map(focusName).join(' und ')+' trainiert, deshalb schlage ich heute '+focusName(f)+' vor.':'Ein guter Start: '+focusName(f)+'.';
+  return {focus:f,style:resolveStyle(goalStyle(S.fit.goal,f)),minutes:S.fit.minutes,week:0,date:todayStr(),planDate:'',reason:why};
+}
+function ensureDraft(){if(!S.draft&&S.lib.length){var r=recommend();newDraft(r);S.draft.reason=r.reason;}}
+function findAlt(e,k,exclude){
+  var tried=(e.alt&&e.alt[k])||[],ok=function(x){return x&&x.id!==e.id&&usable(x)&&!((x.fl||{})[k]>0)&&(!exclude||exclude.indexOf(x.id)<0);};
+  for(var i=0;i<tried.length;i++){var x=exBy(tried[i]);if(ok(x))return x;}
+  var same=S.lib.filter(function(x){return ok(x)&&x.r===e.r;});
+  same.sort(function(a,b){var sa=a.st.filter(function(s){return e.st.indexOf(s)>=0;}).length,sb=b.st.filter(function(s){return e.st.indexOf(s)>=0;}).length;return sb-sa;});
+  return same[0]||null;
+}
+
+/* ---------- Training: Daten abonnieren ---------- */
+function subTraining(){
+  S.db.doc('meta/exercises').onSnapshot(function(snap){
+    var d=snap.exists?snap.data():null;
+    S.lib=(d&&Array.isArray(d.items))?d.items:[];S.libById={};S.lib.forEach(function(e){S.libById[e.id]=e;});
+    renderTrainCard();if(S.view==='training'&&!S.player)renderTraining();
+  },function(){});
+  S.db.doc('meta/styles').onSnapshot(function(snap){
+    var d=snap.exists?snap.data():null;S.styles=(d&&Array.isArray(d.items))?d.items:[];
+    if(S.view==='training'&&!S.player)renderTraining();
+  },function(){});
+  profileRef.collection('sessions').orderBy('ts','desc').limit(200).onSnapshot(function(snap){
+    S.sessions=snap.docs.map(function(d){var o=d.data();o.id=d.id;return o;});
+    renderSummary();renderTrainCard();renderWeek();
+    if(S.view==='training'&&!S.player&&(S.tsub==='workout'||S.tsub==='plan'))renderTraining();
+  },function(){});
+}
+
+/* ---------- Training: Heute-Karte ---------- */
+function renderTrainCard(){
+  var el=$('#trainCard');if(!el||!S.fit)return;
+  var done=sessionsOn(S.date),cr=burnedFor(S.date);
+  var h='<div class="card"><div class="mhead" style="padding:0"><h3>Training</h3>'+(done.length?'<span class="msum">+'+fmt(cr)+' kcal angerechnet</span>':'')+'</div>';
+  if(done.length){
+    h+=done.map(function(s){return '<div class="mrow"><div class="mmain"><div class="mtitle">'+esc(s.title)+'</div><div class="msub"><span>'+s.minutes+' Min.</span></div></div><div class="mk">'+fmt(s.kcal)+'<small>kcal</small></div></div>';}).join('');
+  }else if(S.lib.length&&S.date===todayStr()){
+    var r=recommend();
+    h+='<p style="margin:0">Heute: <b>'+esc(focusName(r.focus))+(r.style!=='egal'?' · '+esc(styleName(r.style)):'')+'</b> · '+r.minutes+' Min.</p><p class="hint">'+esc(r.reason)+'</p>';
+  }else h+='<p class="hint">An diesem Tag gibt es noch kein Training.</p>';
+  h+='<div class="btns"><button class="btn'+(done.length?'':' primary')+' block" data-act="t-gotrain">'+(done.length?'Noch ein Workout':'Workout ansehen')+'</button></div></div>';
+  el.innerHTML=h;
+}
+
+/* ---------- Training: Ansichten ---------- */
+function renderTraining(){
+  var sn=$('#subnav'),tc=$('#tcontent');if(!sn||!tc)return;
+  sn.innerHTML=SUBS.map(function(s){return '<button class="sn" role="tab" data-act="t-sub" data-s="'+s[0]+'" aria-selected="'+(S.tsub===s[0])+'">'+s[1]+'</button>';}).join('');
+  if(!S.lib.length&&S.tsub!=='setup'){tc.innerHTML='<div class="card"><p class="hint">Die Übungsbibliothek wird geladen. Falls das länger dauert, prüfe die Verbindung.</p></div>';return;}
+  var fn={workout:tWorkout,plan:tPlan,uebungen:tLib,stile:tStyles,setup:tSetup}[S.tsub]||tWorkout;
+  tc.innerHTML=fn();
+}
+var SUBS=[['workout','Workout'],['plan','Plan'],['uebungen','Übungen'],['stile','Stile'],['setup','Einstellungen']];
+function styleOptions(sel){
+  var o='<option value="egal"'+(sel==='egal'?' selected':'')+'>Egal, du entscheidest</option>';
+  S.styles.forEach(function(s){var n=S.lib.filter(function(e){return usable(e)&&e.st.indexOf(s.id)>=0;}).length;o+='<option value="'+s.id+'"'+(sel===s.id?' selected':'')+'>'+esc(s.name)+' ('+n+')</option>';});
+  return o;
+}
+function itemHtml(it,i){
+  var e=exBy(it.id);if(!e)return '';
+  var v=variant(e,it.lv),role=it.role==='warm'?'Aufwärmen':it.role==='cool'?'Abkühlen':'';
+  var fl=Object.keys(e.fl||{}).filter(function(k){return k!=='u'&&e.fl[k]>0;});
+  var alt='';
+  if(S.altOpen===i){
+    alt='<div class="chiprow">'+(fl.length?fl.map(function(k){return '<button class="mini" data-act="t-altdo" data-i="'+i+'" data-k="'+k+'">Schonender für '+esc(RESTRN[k]||k)+'</button>';}).join(''):'<span class="hint">Für diese Übung gibt es keine Belastungs-Markierung.</span>')+'<button class="mini" data-act="t-altdo" data-i="'+i+'" data-k="_easier">Leichter machen</button></div>';
+  }
+  return '<div class="ex-item"><div class="ex-head"><div style="min-width:0"><div class="ex-name">'+esc(v.t)+'</div><div class="ex-rx">'+esc(rxText(e,it))+(role?' · '+role:'')+'</div></div><button class="x" data-act="t-del" data-i="'+i+'" aria-label="Entfernen">'+ico('x',18)+'</button></div>'+
+    musclesHtml(e)+
+    '<div class="lvseg" role="group" aria-label="Level">'+[1,2,3].map(function(l){return '<button data-act="t-lv" data-i="'+i+'" data-l="'+l+'" aria-pressed="'+(it.lv===l)+'">'+LEVELN[l-1]+'</button>';}).join('')+'</div>'+
+    '<p class="how">'+esc(v.h)+'</p>'+
+    '<div class="chiprow"><button class="mini" data-act="t-alt" data-i="'+i+'">Schonender</button><button class="mini" data-act="t-swap" data-i="'+i+'">Ersetzen</button><a class="mini" href="'+esc(videoUrl(e))+'" target="_blank" rel="noopener">Video</a></div>'+alt+'</div>';
+}
+function tWorkout(){
+  ensureDraft();var d=S.draft;
+  var h='<div class="card"><div class="mhead" style="padding:0"><h3>Ort und Ausrüstung</h3><button class="mini" data-act="t-sub" data-s="setup">Ändern</button></div><p style="margin:0;font-weight:800">'+(S.fit.place?esc(S.fit.place):'Noch kein Ort angegeben')+'</p><p class="hint">'+S.fit.equip.length+' Geräte ausgewählt. Dein Workout nutzt nur, was du gerade dabei hast.</p></div>';
+  h+='<div class="card"><h2>Was trainierst du heute?</h2>'+(d&&d.reason?'<p class="hint">'+esc(d.reason)+'</p>':'')+
+    '<div class="chiprow">'+FOCUS.map(function(f){return '<button class="chipbtn" data-act="t-focus" data-f="'+f[0]+'" aria-pressed="'+(!!d&&d.focus===f[0])+'">'+f[1]+'</button>';}).join('')+'</div>'+
+    '<label class="field"><span>Stil</span><select class="in" id="tStyle">'+styleOptions(d?d.style:'egal')+'</select></label>'+
+    '<div class="field"><span>Dauer</span><div class="chiprow">'+[10,20,30,45,60].map(function(m){return '<button class="chipbtn" data-act="t-min" data-m="'+m+'" aria-pressed="'+(!!d&&d.minutes===m)+'">'+m+' Min.</button>';}).join('')+'</div></div>'+
+    '<div class="btns"><button class="btn" data-act="t-shuffle">Neu mischen</button></div></div>';
+  if(d&&d.items.length){
+    h+='<div class="card"><h2>'+esc(draftTitle(d))+'</h2><p class="hint"><b>ca. '+estMinutes(d.items)+' Min.</b> · ca. '+fmt(estKcal(d.items))+' kcal · '+esc(regionsOf(d.items))+'</p><div>'+d.items.map(itemHtml).join('')+'</div>'+
+      '<div class="btns"><button class="btn" data-act="t-add">+ Übung</button><button class="btn primary block" data-act="t-start">'+ico('play',18)+' Workout starten</button></div></div>';
+  }else if(d){
+    h+='<div class="card"><p class="hint">Mit deiner Ausrüstung und deinen Einschränkungen finde ich dafür keine Übungen. Wähle einen anderen Fokus oder Stil oder passe die Einstellungen an.</p></div>';
+  }
+  h+=tCalc()+tEvent();
+  return h;
+}
+function calcActs(){var a=[0,1,2];if(S.fit.equip.indexOf('pool')>=0)a.push(3);return a;}
+function tCalc(){
+  var c=S.calc,known=num(S.body.weight)>0;
+  return '<div class="card"><h2>Kalorienrechner</h2><div class="grid2"><label class="field"><span>Aktivität</span><select class="in" id="cAct">'+ACTS.map(function(a,i){return '<option value="'+i+'"'+(i===c.act?' selected':'')+'>'+esc(a[0])+'</option>';}).join('')+'</select></label>'+
+    '<label class="field"><span>Minuten</span><input class="in" id="cMin" type="number" inputmode="numeric" min="1" max="240" value="'+c.min+'"></label></div>'+
+    '<div class="res"><div class="res-kcal" id="cOut">'+fmt(netK(ACTS[c.act][1],c.min))+'<small>kcal</small></div><p class="hint" id="cHint">'+esc(calcHint())+'</p></div></div>';
+}
+function calcHint(){var c=S.calc,known=num(S.body.weight)>0;return 'Wenn du jetzt noch '+c.min+' Minuten '+ACTS[c.act][0]+' machst. Gerechnet mit '+fmt(kgNow())+' kg'+(known?'':' (Standardwert, trage dein Gewicht im Profil ein)')+'.';}
+function evHtml(){
+  var x=Math.max(0,S.calc.extra),acts=calcActs();
+  if(!x)return '<p class="hint">Trage ein, wie viele Kalorien du zusätzlich isst.</p>';
+  var tiles=function(f){return '<div class="tip-grid">'+acts.slice(0,3).map(function(i){return '<div class="tip-tile"><b>'+fmtMin(Math.max(5,Math.round(needMin(ACTS[i][1],f))))+'</b><span>'+esc(ACTS[i][0])+'</span></div>';}).join('')+'</div>';};
+  var half=Math.round(x/2);
+  return '<div><h3 style="margin-bottom:8px">Vorher vorarbeiten (ca. '+fmt(x)+' kcal)</h3>'+tiles(x)+'</div>'+
+    '<div><h3 style="margin-bottom:8px">Am nächsten Tag ausgleichen</h3>'+tiles(x)+'<p class="hint" style="margin-top:8px">Oder teile es auf: die Hälfte ('+fmt(half)+' kcal) vorher mit '+fmtMin(needMin(ACTS[0][1],half))+' Gehen und die andere Hälfte morgen etwas weniger essen.</p></div>';
+}
+function tEvent(){
+  return '<div class="card"><h2>Ausgleich planen</h2><p class="hint">Geburtstag, Essen gehen oder ein Stück Kuchen am Abend? Sag mir, wie viel du zusätzlich isst, dann siehst du, wie du vorarbeiten oder am nächsten Tag ausgleichen kannst.</p>'+
+    '<div class="chiprow">'+EXTRAS.map(function(f){return '<button class="chipbtn" data-act="t-evfood" data-k="'+f[1]+'">'+esc(f[0])+' · '+f[1]+'</button>';}).join('')+'</div>'+
+    '<label class="field"><span>Zusätzliche Kalorien</span><input class="in" id="evK" type="number" inputmode="numeric" min="0" value="'+S.calc.extra+'"></label>'+
+    '<div id="evOut" style="display:flex;flex-direction:column;gap:16px">'+evHtml()+'</div></div>';
+}
+function goalOptions(sel){return GOALS.map(function(g){return '<option value="'+g[0]+'"'+(sel===g[0]?' selected':'')+'>'+g[1]+'</option>';}).join('');}
+function planDays(){
+  var p=S.fit.plan;if(!p)return [];
+  var out=[];
+  for(var w=0;w<p.weeks;w++){
+    var days=p.sched.map(function(s){var date=shiftDate(p.start,w*7+s.dow);return {date:date,week:w,focus:s.focus,dow:s.dow};});
+    out.push(days);
+  }
+  return out;
+}
+function tPlan(){
+  var p=S.fit.plan,f=S.fit;
+  var h='<div class="card"><h2>Dein 4-Wochen-Plan</h2><p class="hint">'+esc(GOALTXT[f.goal]||'')+'</p>'+
+    '<label class="field"><span>Ziel</span><select class="in" id="fitGoal">'+goalOptions(f.goal)+'</select></label>'+
+    '<div class="field"><span>Trainingstage pro Woche</span><div class="chiprow">'+[2,3,4,5,6].map(function(n){return '<button class="chipbtn" data-act="t-days" data-n="'+n+'" aria-pressed="'+(f.perWeek===n)+'">'+n+'</button>';}).join('')+'</div></div>'+
+    '<div class="field"><span>Dauer pro Training</span><div class="chiprow">'+[10,20,30,45,60].map(function(m){return '<button class="chipbtn" data-act="t-fmin" data-m="'+m+'" aria-pressed="'+(f.minutes===m)+'">'+m+' Min.</button>';}).join('')+'</div></div>'+
+    '<div class="btns"><button class="btn primary block" data-act="t-mkplan">'+(p?'Neuen Plan erstellen':'Plan erstellen')+'</button></div></div>';
+  if(p){
+    var weeks=planDays(),today=todayStr(),endDate=shiftDate(p.start,p.weeks*7-1);
+    if(today>endDate)h+='<div class="banner">Dein Block ist abgeschlossen. Starte einen neuen Plan, die Levels sind durch deine Rückmeldungen schon angepasst.</div>';
+    weeks.forEach(function(days,w){
+      var cur=daysBetween(p.start,today);var isCur=cur>=w*7&&cur<w*7+7;
+      h+='<div class="card plan-week"><div><h2>Woche '+(w+1)+' · '+WEEKNAMES[w]+(isCur?' <span class="badge" style="vertical-align:middle">jetzt</span>':'')+'</h2><p class="hint">'+WEEKTEXT[w]+'</p></div>'+
+        days.map(function(d){
+          var done=sessionsOn(d.date).length>0,st=resolveStyle(goalStyle(f.goal,d.focus));
+          return '<button class="plan-day'+(d.date===today?' today':'')+(done?' done':'')+'" data-act="t-planday" data-d="'+d.date+'" data-w="'+w+'"><span><b>'+esc(parseD(d.date).toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'numeric'}))+'</b> · '+esc(focusName(d.focus))+(st!=='egal'?' · '+esc(styleName(st)):'')+'</span><span>'+(done?'Erledigt':p.minutes+' Min.')+'</span></button>';
+        }).join('')+'</div>';
+    });
+  }
+  return h;
+}
+function libFiltered(){
+  var f=S.exf;
+  return S.lib.filter(function(e){
+    if(f.reg&&e.r!==f.reg)return false;
+    if(f.style&&e.st.indexOf(f.style)<0)return false;
+    if(f.only&&!usable(e))return false;
+    if(f.q){var q=norm(f.q);if(norm(e.n+' '+e.m.join(' ')+' '+e.lv.map(function(l){return l[0];}).join(' ')).indexOf(q)<0)return false;}
+    return true;
+  });
+}
+function libCard(e){
+  var lv=lvOf(e),v=variant(e,lv),open=S.exOpen===e.id,it={id:e.id,lv:lv,sets:v.s,n:v.n};
+  var why='';
+  if(!eqOK(e)){var miss=e.eq.filter(function(g){return !g.split('|').some(function(id){return S.fit.equip.indexOf(id)>=0;});}).map(function(g){return g.split('|').map(eqName).join(' oder ');});why='Braucht: '+miss.join(', ');}
+  else if(!allowed(e))why='Passt nicht zu deinen Einschränkungen';
+  var h='<div class="card"><div class="ex-head"><div style="min-width:0"><div class="ex-name">'+esc(v.t)+'</div><div class="ex-rx">'+esc(e.n)+' · '+LEVELN[lv-1]+' · '+esc(rxText(e,it))+'</div></div><button class="mini" data-act="t-exopen" data-id="'+e.id+'">'+(open?'Weniger':'Details')+'</button></div>'+musclesHtml(e)+(why?'<p class="note warnnote">'+esc(why)+'</p>':'');
+  if(open){
+    var fl=Object.keys(e.fl||{}).filter(function(k){return k!=='u'&&e.fl[k]>0;});
+    h+='<div class="lvseg" role="group" aria-label="Level für diese Übung">'+[1,2,3].map(function(l){return '<button data-act="t-exlv" data-id="'+e.id+'" data-l="'+l+'" aria-pressed="'+(lv===l)+'">'+LEVELN[l-1]+'</button>';}).join('')+'</div>'+
+      '<p class="how">'+esc(v.h)+'</p>'+
+      (e.eq.length?'<p class="hint">Du brauchst: '+e.eq.map(function(g){return g.split('|').map(eqName).join(' oder ');}).join(', ')+'</p>':'<p class="hint">Du brauchst nur dein Körpergewicht.</p>')+
+      (fl.length?'<p class="hint">Belastet: '+fl.map(function(k){return RESTRN[k]+(e.fl[k]>1?' (stark)':' (leicht)');}).join(', ')+'</p><div class="chiprow">'+fl.map(function(k){return '<button class="mini" data-act="t-exalt" data-id="'+e.id+'" data-k="'+k+'">Schonender für '+esc(RESTRN[k])+'</button>';}).join('')+'</div>':'')+
+      '<div class="chiprow"><a class="mini" href="'+esc(videoUrl(e))+'" target="_blank" rel="noopener">'+(S.fit.videos[e.id]?'Dein Video ansehen':'Video suchen (YouTube)')+'</a><button class="mini" data-act="t-exadd" data-id="'+e.id+'">+ Zum Workout</button></div>'+
+      '<div class="row"><label class="field"><span>Eigener Video-Link (optional)</span><input class="in" id="vidIn" placeholder="https://www.youtube.com/watch?v=…" value="'+esc(S.fit.videos[e.id]||'')+'"></label><button class="mini" data-act="t-vidsave" data-id="'+e.id+'">Speichern</button></div>';
+  }
+  return h+'</div>';
+}
+function libListHtml(){
+  var list=libFiltered(),n=list.length;
+  var h='<p class="hint">'+n+' Übungen'+(S.exf.only?' passend zu Ausrüstung und Einschränkungen':'')+'</p>';
+  h+=list.slice(0,S.exf.limit).map(libCard).join('');
+  if(n>S.exf.limit)h+='<button class="btn" data-act="t-more" style="width:100%">Mehr anzeigen</button>';
+  if(!n)h+='<div class="card"><p class="hint">Keine Treffer. Schalte den Filter „Nur passende“ aus oder ändere die Suche.</p></div>';
+  return h;
+}
+function tLib(){
+  var f=S.exf;
+  return '<div class="card"><label class="field"><span>Übung suchen</span><input class="in" id="lq" type="search" placeholder="z. B. Kniebeuge, Rücken, Pool" value="'+esc(f.q)+'" autocomplete="off"></label>'+
+    '<div class="chiprow"><button class="chipbtn" data-act="t-reg" data-r="" aria-pressed="'+(!f.reg)+'">Alle</button>'+Object.keys(REGN).map(function(r){return '<button class="chipbtn" data-act="t-reg" data-r="'+r+'" aria-pressed="'+(f.reg===r)+'">'+REGN[r]+'</button>';}).join('')+'</div>'+
+    '<div class="grid2"><label class="field"><span>Stil</span><select class="in" id="lStyle"><option value="">Alle Stile</option>'+S.styles.map(function(s){return '<option value="'+s.id+'"'+(f.style===s.id?' selected':'')+'>'+esc(s.name)+'</option>';}).join('')+'</select></label>'+
+    '<label class="field"><span>Filter</span><button class="chipbtn" data-act="t-only" aria-pressed="'+f.only+'" style="height:48px">Nur passende</button></label></div></div>'+
+    '<div id="libList" class="view">'+libListHtml()+'</div>';
+}
+function tStyles(){
+  if(!S.styles.length)return '<div class="card"><p class="hint">Die Stile werden geladen.</p></div>';
+  var rec=GOALSTYLE[S.fit.goal]||{},recIds=Object.keys(rec).map(function(k){return rec[k];});
+  return S.styles.map(function(s){
+    var n=S.lib.filter(function(e){return e.st.indexOf(s.id)>=0;}).length;
+    return '<div class="card story"><div class="mhead" style="padding:0"><h2>'+esc(s.name)+'</h2>'+(recIds.indexOf(s.id)>=0?'<span class="badge">passt zu deinem Ziel</span>':'')+'</div><p style="margin:0;font-weight:700">'+esc(s.kurz)+'</p>'+
+      '<dl><div><dt>Für wen</dt><dd>'+esc(s.fuer)+'</dd></div><div><dt>Ziele</dt><dd>'+esc(s.ziele)+'</dd></div><div><dt>Stark bei</dt><dd>'+esc(s.stark)+'</dd></div><div><dt>Weniger gut bei</dt><dd>'+esc(s.schwach)+'</dd></div><div><dt>Du brauchst</dt><dd>'+esc(s.brauch)+'</dd></div></dl>'+
+      '<div class="btns"><button class="btn" data-act="t-stylelib" data-s="'+s.id+'">'+n+' Übungen</button><button class="btn primary block" data-act="t-stylewo" data-s="'+s.id+'">Workout in diesem Stil</button></div></div>';
+  }).join('');
+}
+function tSetup(){
+  var f=S.fit;
+  var h='<div class="card"><h2>Ort und Ausrüstung</h2><p class="hint">Ändere das, sobald du den Ort wechselst oder anderes Material dabei hast. Dein Workout passt sich sofort an.</p>'+
+    '<label class="field"><span>Ort (optional)</span><input class="in" id="fitPlace" placeholder="z. B. Phuket, Hotel mit Pool" value="'+esc(f.place)+'"></label>'+
+    '<div class="chiprow">'+PRESETS.map(function(p,i){return '<button class="chipbtn" data-act="t-preset" data-i="'+i+'">'+esc(p[0])+'</button>';}).join('')+'</div>'+
+    '<div class="equip-grid">'+EQUIP.map(function(e){return '<button class="chipbtn" data-act="t-eq" data-id="'+e[0]+'" aria-pressed="'+(f.equip.indexOf(e[0])>=0)+'">'+esc(e[1])+'</button>';}).join('')+'</div>'+
+    '<p class="hint">Dein Körpergewicht ist immer dabei.</p></div>';
+  h+='<div class="card"><h2>Worauf du achtest</h2><p class="hint">Pro Bewegungsart: „Sparsam“ erlaubt höchstens eine leichte Übung pro Workout, „Vermeiden“ schließt sie ganz aus.</p>'+
+    RESTR.map(function(r){var m=restrMode(r[0]);return '<div class="restr-row"><b>'+r[1]+'</b><div class="lvseg" role="group" aria-label="'+r[1]+'">'+[['ok','Okay'],['sparsam','Sparsam'],['vermeiden','Vermeiden']].map(function(x){return '<button data-act="t-restr" data-k="'+r[0]+'" data-m="'+x[0]+'" aria-pressed="'+(m===x[0])+'">'+x[1]+'</button>';}).join('')+'</div></div>';}).join('')+'</div>';
+  h+='<div class="card"><h2>Dein Level</h2><p class="hint">Das Grundlevel gilt, wenn du nichts anderes einstellst. Pro Körperregion und pro Übung kannst du es überschreiben.</p>'+
+    '<div class="lvseg" role="group" aria-label="Grundlevel">'+[1,2,3].map(function(l){return '<button data-act="t-glv" data-l="'+l+'" aria-pressed="'+(f.level===l)+'">'+LEVELN[l-1]+'</button>';}).join('')+'</div>'+
+    '<div class="grid2">'+['beine','brust','ruecken','schultern','arme','bauch'].map(function(r){var cur=f.regionLevel[r]||0;return '<label class="field"><span>'+REGN[r]+'</span><select class="in" id="rl_'+r+'"><option value="0"'+(!cur?' selected':'')+'>Wie Grundlevel</option>'+[1,2,3].map(function(l){return '<option value="'+l+'"'+(cur===l?' selected':'')+'>'+LEVELN[l-1]+'</option>';}).join('')+'</select></label>';}).join('')+'</div></div>';
+  h+='<div class="card"><h2>Ziel und Kalorien</h2><label class="field"><span>Trainingsziel</span><select class="in" id="fitGoal">'+goalOptions(f.goal)+'</select></label>'+
+    '<div class="field"><span>Standard-Dauer</span><div class="chiprow">'+[10,20,30,45,60].map(function(m){return '<button class="chipbtn" data-act="t-fmin" data-m="'+m+'" aria-pressed="'+(f.minutes===m)+'">'+m+' Min.</button>';}).join('')+'</div></div>'+
+    '<label class="field"><span>Verbrannte Kalorien aufs Tagesziel anrechnen</span><select class="in" id="fitCredit"><option value="100"'+(f.credit===100?' selected':'')+'>Voll (100 %)</option><option value="50"'+(f.credit===50?' selected':'')+'>Zur Hälfte (50 %)</option><option value="0"'+(f.credit===0?' selected':'')+'>Gar nicht</option></select></label>'+
+    '<label style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" id="fitSound"'+(f.sound?' checked':'')+'> Töne im Workout-Begleiter</label></div>';
+  return h;
+}
+
+/* ---------- Training: Workout-Begleiter ---------- */
+var P=null,pTimer=null,wake=null,audioCtx=null;
+function beep(freq,ms){
+  if(!S.fit.sound)return;
+  try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();var o=audioCtx.createOscillator(),g=audioCtx.createGain();o.frequency.value=freq;g.gain.value=0.08;o.connect(g);g.connect(audioCtx.destination);o.start();o.stop(audioCtx.currentTime+ms/1000);}catch(e){}
+}
+function buildSteps(items){
+  var steps=[];
+  items.forEach(function(it,ix){
+    var e=exBy(it.id);if(!e)return;var u=isU(e);
+    for(var s=1;s<=it.sets;s++){
+      if(e.mode==='time'){
+        if(u){steps.push({t:'work',ix:ix,set:s,sets:it.sets,side:'linke Seite',dur:it.n});steps.push({t:'work',ix:ix,set:s,sets:it.sets,side:'rechte Seite',dur:it.n});}
+        else steps.push({t:'work',ix:ix,set:s,sets:it.sets,side:'',dur:it.n});
+      }else steps.push({t:'work',ix:ix,set:s,sets:it.sets,side:u?'je Seite':'',dur:0});
+      var last=(ix===items.length-1&&s===it.sets);
+      if(!last)steps.push({t:'rest',ix:ix,dur:s<it.sets?35:20});
+    }
+  });
+  return steps;
+}
+function fmtT(s){s=Math.max(0,Math.ceil(s));return s>=60?Math.floor(s/60)+':'+pad(s%60):String(s);}
+async function startPlayer(){
+  var d=S.draft;if(!d||!d.items.length){toast('Das Workout ist leer.');return;}
+  P={steps:buildSteps(d.items),i:0,el:0,last:Date.now(),paused:false,act:{},rest:0,fin:false,confirm:false,rate:{},altMenu:false,lastBeep:0};
+  S.player=true;
+  var pl=$('#player');pl.hidden=false;document.body.style.overflow='hidden';
+  try{audioCtx=audioCtx||new (window.AudioContext||window.webkitAudioContext)();if(audioCtx.resume)audioCtx.resume();}catch(e){}
+  try{if(navigator.wakeLock)wake=await navigator.wakeLock.request('screen');}catch(e){wake=null;}
+  pRender();clearInterval(pTimer);pTimer=setInterval(pTick,250);
+}
+function pTick(){
+  if(!P||P.fin||P.confirm){if(P)P.last=Date.now();return;}
+  var now=Date.now(),dt=(now-P.last)/1000;P.last=now;
+  if(P.paused)return;
+  var st=P.steps[P.i];if(!st)return;
+  if(st.t==='work')P.act[st.ix]=(P.act[st.ix]||0)+dt;else P.rest+=dt;
+  P.el+=dt;
+  if(st.dur){
+    var left=st.dur-P.el;
+    if(left<=3.2&&left>0){var sec=Math.ceil(left);if(P.lastBeep!==sec){P.lastBeep=sec;beep(660,110);}}
+    if(left<=0){beep(880,320);pNext();return;}
+  }
+  pUpdate();
+}
+function pUpdate(){
+  var st=P.steps[P.i];if(!st)return;
+  var t=$('#pTime');
+  if(st.dur){var left=Math.max(0,st.dur-P.el);if(t)t.textContent=fmtT(left);setRing('T',Math.min(100,P.el/st.dur*100));}
+  else{var el=$('#pElapsed');if(el)el.textContent='Zeit: '+fmtT(P.el);}
+}
+function pNext(){
+  if(!P)return;
+  P.i++;P.el=0;P.lastBeep=0;P.altMenu=false;
+  if(P.i>=P.steps.length){P.fin=true;beep(880,500);}
+  pRender();
+}
+function pStats(){
+  var kg=kgNow(),k=0,act=0;
+  Object.keys(P.act).forEach(function(ix){var it=S.draft.items[ix],e=it&&exBy(it.id);if(!e)return;var s=P.act[ix];act+=s;k+=(itemMet(e,it)-1)*kg*s/3600;});
+  k+=0.5*kg*P.rest/3600;
+  return {kcal:k,act:act,total:act+P.rest};
+}
+function pRender(){
+  var el=$('#player');if(!el||!P)return;
+  var d=S.draft;
+  var pct=P.fin?100:Math.round(P.i/P.steps.length*100);
+  var head='<div class="p-top"><div class="p-prog"><i style="width:'+pct+'%"></i></div><button class="round" data-act="t-pend" aria-label="Beenden">'+ico('x',20)+'</button></div>';
+  if(P.fin){
+    var s=pStats();
+    el.innerHTML=head+'<div class="p-body"><p class="eyebrow">Geschafft</p><h1 class="p-title">Workout beendet</h1>'+
+      '<div class="stats"><div class="stat"><span>Dauer</span><b>'+Math.max(1,Math.round(s.total/60))+' Min.</b></div><div class="stat"><span>Verbrannt (geschätzt)</span><b>'+fmt(s.kcal)+' kcal</b></div></div>'+
+      '<h3>Wie war es?</h3>'+d.items.map(function(it,ix){var e=exBy(it.id);if(!e||!P.act[ix])return '';var v=variant(e,it.lv),r=P.rate[ix]||0;
+        return '<div class="ex-item"><div class="ex-name">'+esc(v.t)+'</div><div class="lvseg" role="group" aria-label="Rückmeldung">'+[[1,'Zu leicht'],[0,'Passt'],[-1,'Zu schwer']].map(function(x){return '<button data-act="t-prate" data-ix="'+ix+'" data-r="'+x[0]+'" aria-pressed="'+(r===x[0])+'">'+x[1]+'</button>';}).join('')+'</div></div>';}).join('')+
+      '<p class="hint">„Zu leicht“ hebt das Level dieser Übung an, „Zu schwer“ senkt es.</p>'+
+      '<div class="btns"><button class="btn primary block" data-act="t-psave">Speichern</button><button class="btn" data-act="t-pdiscard">Verwerfen</button></div></div>';
+    return;
+  }
+  if(P.confirm){
+    el.innerHTML=head+'<div class="p-body"><p class="eyebrow">Beenden?</p><h1 class="p-title">Training beenden</h1><p class="how">Bis jetzt: '+Math.max(1,Math.round(pStats().total/60))+' Min., ca. '+fmt(pStats().kcal)+' kcal.</p>'+
+      '<div class="btns"><button class="btn primary block" data-act="t-pfinish">Speichern und beenden</button><button class="btn" data-act="t-pdiscard">Verwerfen</button><button class="btn" data-act="t-pcont">Weitermachen</button></div></div>';
+    return;
+  }
+  var st=P.steps[P.i],it=d.items[st.ix],e=exBy(it.id),v=variant(e,it.lv),body;
+  if(st.t==='work'){
+    body='<p class="eyebrow">Satz '+st.set+' von '+st.sets+(st.side?' · '+esc(st.side):'')+' · Übung '+(st.ix+1)+' von '+d.items.length+'</p><h1 class="p-title">'+esc(v.t)+'</h1>'+musclesHtml(e)+
+      (st.dur?ringMarkup('T','big','<span class="rc-num" id="pTime">'+fmtT(st.dur)+'</span><span class="rc-sub">Sekunden</span>'):'<div class="p-reps"><div class="rc-num">'+it.n+'</div><div class="rc-sub">Wiederholungen'+(isU(e)?' je Seite':'')+'</div><div class="hint" id="pElapsed"></div></div>')+
+      '<p class="how">'+esc(v.h)+'</p>';
+  }else{
+    var nx=P.steps[P.i+1],nit=nx?d.items[nx.ix]:null,ne=nit?exBy(nit.id):null,nv=ne?variant(ne,nit.lv):null;
+    body='<p class="eyebrow">Pause</p><h1 class="p-title">Kurz durchatmen</h1>'+ringMarkup('T','big rest','<span class="rc-num" id="pTime">'+fmtT(st.dur-P.el)+'</span><span class="rc-sub">Sekunden</span>')+(nv?'<p class="how">Als Nächstes: <b>'+esc(nv.t)+'</b></p>':'');
+  }
+  var fl=Object.keys(e.fl||{}).filter(function(k){return k!=='u'&&e.fl[k]>0;});
+  var alt=(P.altMenu&&st.t==='work')?'<div class="chiprow">'+(fl.map(function(k){return '<button class="mini" data-act="t-paltdo" data-k="'+k+'">Schonender für '+esc(RESTRN[k])+'</button>';}).join(''))+'<button class="mini" data-act="t-paltdo" data-k="_easier">Leichter machen</button></div>':'';
+  el.innerHTML=head+'<div class="p-body">'+body+'</div><div class="p-controls"><div class="btns" style="flex-wrap:nowrap"><button class="btn" data-act="t-pprev" aria-label="Zurück">'+ico('chevL',20)+'</button><button class="btn" data-act="t-ppause" style="flex:1">'+(P.paused?'Weiter':'Pause')+'</button><button class="btn primary" data-act="t-pnext" style="flex:1.4">'+(st.t==='rest'?'Weiter':(st.dur?'Überspringen':'Fertig'))+'</button></div>'+
+    '<div class="chiprow">'+(st.t==='work'?'<button class="mini" data-act="t-palt">Schonender</button><a class="mini" href="'+esc(videoUrl(e))+'" target="_blank" rel="noopener">Video</a>':'<button class="mini" data-act="t-padd">+15 Sek.</button>')+'<button class="mini" data-act="t-psound">Ton '+(S.fit.sound?'an':'aus')+'</button></div>'+alt+'</div>';
+  if(st.dur)setRing('T',P.el/st.dur*100);
+}
+function closePlayer(){
+  clearInterval(pTimer);pTimer=null;P=null;S.player=false;
+  var pl=$('#player');if(pl){pl.hidden=true;pl.innerHTML='';}
+  document.body.style.overflow=S.sheet?'hidden':'';
+  try{if(wake&&wake.release)wake.release();}catch(e){}wake=null;
+}
+async function pSave(){
+  var st=pStats(),d=S.draft;
+  var date=(d.date&&d.date<=todayStr())?d.date:todayStr();
+  var doc={date:date,title:draftTitle(d),focus:d.focus,style:d.style,minutes:Math.max(1,Math.round(st.total/60)),kcal:r0(st.kcal),active:r0(st.act),done:true,
+    items:d.items.map(function(it){var e=exBy(it.id);return {id:it.id,name:e?variant(e,it.lv).t:it.id,lv:it.lv,sets:it.sets,n:it.n};}),ts:Date.now()};
+  if(!profileRef){toast(errMsg({code:'invalid_argument'}));return;}
+  try{await profileRef.collection('sessions').add(doc);}catch(e){toast(errMsg(e));return;}
+  var changed=0;
+  d.items.forEach(function(it,ix){var r=P.rate[ix]||0;if(!r)return;var nl=Math.max(1,Math.min(3,it.lv+r));if(nl!==it.lv){S.fit.exLevel[it.id]=nl;changed++;}});
+  if(changed)saveFit();
+  closePlayer();S.draft=null;
+  toast('Training gespeichert · '+fmt(doc.kcal)+' kcal'+(changed?' · Level angepasst':''));
+  if(S.view==='training')renderTraining();
+}
+
+/* ---------- Training: Klicks ---------- */
+function applyAlt(items,i,k){
+  var it=items[i],e=exBy(it.id);if(!e)return null;
+  if(k==='_easier'){if(it.lv>1){S.fit.exLevel[e.id]=it.lv-1;saveFit();var n=makeItem(e,S.draft?S.draft.week:0);n.role=it.role;items[i]=n;return e;}toast('Das ist schon die leichteste Stufe.');return null;}
+  var a=findAlt(e,k,items.map(function(x){return x.id;}));
+  if(!a){toast('Keine passende Alternative gefunden.');return null;}
+  var n2=makeItem(a,S.draft?S.draft.week:0);n2.role=it.role;items[i]=n2;toast('Ersetzt durch: '+variant(a,n2.lv).t);return a;
+}
+function regenDraft(keepSeed){
+  var d=S.draft||{};
+  newDraft({focus:d.focus||'ganzkoerper',style:d.style||'egal',minutes:d.minutes||S.fit.minutes,week:d.week||0,seed:keepSeed?(d.seed||0):((d.seed||0)+1),date:d.date||'',planDate:d.planDate||'',reason:d.reason||''});
+  S.altOpen=-1;renderTraining();
+}
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-act^="t-"]');if(!b)return;
+  var act=b.dataset.act,i=Number(b.dataset.i),d=S.draft;
+  if(act==='t-sub'){S.tsub=b.dataset.s;renderTraining();window.scrollTo(0,0);}
+  else if(act==='t-gotrain'){S.tsub='workout';setView('training');}
+  else if(act==='t-focus'){var st=d?d.style:'egal';newDraft({focus:b.dataset.f,style:resolveStyle(st),minutes:d?d.minutes:S.fit.minutes,week:d?d.week:0,seed:0,date:d?d.date:'',planDate:d?d.planDate:'',reason:'Dein Wunsch: '+focusName(b.dataset.f)+'.'});S.altOpen=-1;renderTraining();}
+  else if(act==='t-min'){if(d){d.minutes=Number(b.dataset.m);regenDraft(true);}}
+  else if(act==='t-shuffle')regenDraft(false);
+  else if(act==='t-lv'){var it=d.items[i],e=exBy(it.id);S.fit.exLevel[e.id]=Number(b.dataset.l);saveFit();var n=makeItem(e,d.week);n.role=it.role;d.items[i]=n;renderTraining();}
+  else if(act==='t-del'){d.items.splice(i,1);S.altOpen=-1;renderTraining();}
+  else if(act==='t-alt'){S.altOpen=(S.altOpen===i?-1:i);renderTraining();}
+  else if(act==='t-altdo'){if(applyAlt(d.items,i,b.dataset.k))S.altOpen=-1;renderTraining();}
+  else if(act==='t-swap'){
+    var cur=d.items[i],ce=exBy(cur.id),pool=S.lib.filter(function(x){return usable(x)&&x.r===ce.r&&!d.items.some(function(y){return y.id===x.id;});});
+    if(!pool.length){toast('Keine andere passende Übung gefunden.');return;}
+    var pick=pool[Math.floor(Math.random()*pool.length)],ni=makeItem(pick,d.week);ni.role=cur.role;d.items[i]=ni;renderTraining();
+  }
+  else if(act==='t-add'){S.tsub='uebungen';renderTraining();window.scrollTo(0,0);toast('Wähle eine Übung und tippe „+ Zum Workout“.');}
+  else if(act==='t-start')startPlayer();
+  else if(act==='t-days'){S.fit.perWeek=Number(b.dataset.n);saveFit();renderTraining();}
+  else if(act==='t-fmin'){S.fit.minutes=Number(b.dataset.m);saveFit();renderTraining();}
+  else if(act==='t-mkplan'){
+    var seq=GOALSEQ[S.fit.goal]||GOALSEQ.fit,days=DOWS[S.fit.perWeek]||DOWS[3];
+    S.fit.plan={start:mondayOf(todayStr()),weeks:4,perWeek:S.fit.perWeek,minutes:S.fit.minutes,created:todayStr(),sched:days.map(function(dow,k){return {dow:dow,focus:seq[k%seq.length]};})};
+    saveFit();S.draft=null;toast('Plan erstellt');renderTraining();
+  }
+  else if(act==='t-planday'){
+    var p=S.fit.plan,w=Number(b.dataset.w),date=b.dataset.d,s=p.sched.filter(function(x){return x.dow===daysBetween(p.start,date)%7;})[0];if(!s)return;
+    newDraft({focus:s.focus,style:resolveStyle(goalStyle(S.fit.goal,s.focus)),minutes:p.minutes,week:w,seed:0,date:date,planDate:date,reason:'Plan, Woche '+(w+1)+' ('+WEEKNAMES[w]+').'});
+    S.tsub='workout';S.altOpen=-1;renderTraining();window.scrollTo(0,0);
+  }
+  else if(act==='t-reg'){S.exf.reg=b.dataset.r;S.exf.limit=30;renderTraining();}
+  else if(act==='t-only'){S.exf.only=!S.exf.only;renderTraining();}
+  else if(act==='t-more'){S.exf.limit+=30;var ll=$('#libList');if(ll)ll.innerHTML=libListHtml();}
+  else if(act==='t-exopen'){S.exOpen=(S.exOpen===b.dataset.id?'':b.dataset.id);var ll2=$('#libList');if(ll2)ll2.innerHTML=libListHtml();}
+  else if(act==='t-exlv'){S.fit.exLevel[b.dataset.id]=Number(b.dataset.l);saveFit();var ll3=$('#libList');if(ll3)ll3.innerHTML=libListHtml();}
+  else if(act==='t-exalt'){
+    var e0=exBy(b.dataset.id),a=findAlt(e0,b.dataset.k);
+    if(!a){toast('Keine passende Alternative gefunden.');return;}
+    S.exf.q=a.n;S.exf.reg='';S.exf.style='';S.exOpen=a.id;renderTraining();toast('Alternative: '+a.n);
+  }
+  else if(act==='t-exadd'){
+    var e1=exBy(b.dataset.id);ensureDraft();
+    if(!S.draft){return;}
+    if(S.draft.items.some(function(x){return x.id===e1.id;})){toast('Ist schon im Workout.');return;}
+    var ni2=makeItem(e1,S.draft.week);ni2.role='main';
+    var ci=S.draft.items.map(function(x){return x.role;}).lastIndexOf('main');
+    S.draft.items.splice(ci>=0?ci+1:S.draft.items.length,0,ni2);toast('Zum Workout hinzugefügt');
+  }
+  else if(act==='t-vidsave'){
+    var inp=$('#vidIn'),url=(inp.value||'').trim();
+    if(url&&!/^https?:\/\//i.test(url)){toast('Bitte einen Link mit https:// eintragen.');return;}
+    if(url)S.fit.videos[b.dataset.id]=url;else delete S.fit.videos[b.dataset.id];
+    saveFit();toast(url?'Video gespeichert':'Link entfernt');var ll4=$('#libList');if(ll4)ll4.innerHTML=libListHtml();
+  }
+  else if(act==='t-stylelib'){S.exf.style=b.dataset.s;S.exf.reg='';S.exf.q='';S.exf.limit=30;S.tsub='uebungen';renderTraining();window.scrollTo(0,0);}
+  else if(act==='t-stylewo'){
+    var focus=d?d.focus:'ganzkoerper';
+    newDraft({focus:focus,style:b.dataset.s,minutes:d?d.minutes:S.fit.minutes,week:0,seed:0,date:'',reason:'Dein Wunsch: '+styleName(b.dataset.s)+'.'});
+    S.tsub='workout';S.altOpen=-1;renderTraining();window.scrollTo(0,0);
+  }
+  else if(act==='t-evfood'){S.calc.extra=Number(b.dataset.k);var ek=$('#evK');if(ek)ek.value=S.calc.extra;var eo=$('#evOut');if(eo)eo.innerHTML=evHtml();}
+  else if(act==='t-eq'){var id=b.dataset.id,ix=S.fit.equip.indexOf(id);if(ix>=0)S.fit.equip.splice(ix,1);else S.fit.equip.push(id);saveFit();S.draft=null;renderTraining();}
+  else if(act==='t-preset'){S.fit.equip=PRESETS[i][1].slice();if(!S.fit.place)S.fit.place=PRESETS[i][0];saveFit();S.draft=null;renderTraining();}
+  else if(act==='t-restr'){S.fit.restr[b.dataset.k]=b.dataset.m;saveFit();S.draft=null;renderTraining();}
+  else if(act==='t-glv'){S.fit.level=Number(b.dataset.l);saveFit();S.draft=null;renderTraining();}
+  else if(act==='t-pend'){if(P){P.confirm=true;pRender();}}
+  else if(act==='t-pcont'){if(P){P.confirm=false;P.last=Date.now();pRender();}}
+  else if(act==='t-pfinish'){if(P){P.fin=true;P.confirm=false;pRender();}}
+  else if(act==='t-pdiscard'){closePlayer();toast('Training verworfen');}
+  else if(act==='t-ppause'){if(P){P.paused=!P.paused;P.last=Date.now();pRender();}}
+  else if(act==='t-pnext'){if(P)pNext();}
+  else if(act==='t-pprev'){if(P&&P.i>0){P.i--;P.el=0;P.lastBeep=0;pRender();}}
+  else if(act==='t-padd'){if(P){var cs=P.steps[P.i];if(cs&&cs.dur){cs.dur+=15;pRender();}}}
+  else if(act==='t-psound'){S.fit.sound=!S.fit.sound;saveFit();pRender();}
+  else if(act==='t-palt'){if(P){P.altMenu=!P.altMenu;pRender();}}
+  else if(act==='t-paltdo'){
+    if(!P)return;var stp=P.steps[P.i],ix2=stp.ix,old=stp.set;
+    if(applyAlt(S.draft.items,ix2,b.dataset.k)){
+      P.steps=buildSteps(S.draft.items);var idx=-1;
+      for(var q=0;q<P.steps.length;q++){if(P.steps[q].t==='work'&&P.steps[q].ix===ix2&&P.steps[q].set===old){idx=q;break;}}
+      if(idx<0){for(var q2=0;q2<P.steps.length;q2++){if(P.steps[q2].t==='work'&&P.steps[q2].ix===ix2){idx=q2;break;}}}
+      P.i=Math.max(0,idx);P.el=0;P.altMenu=false;
+    }
+    pRender();
+  }
+  else if(act==='t-prate'){if(P){P.rate[Number(b.dataset.ix)]=Number(b.dataset.r);pRender();}}
+  else if(act==='t-psave')pSave();
+});
+document.addEventListener('input',function(ev){
+  var t=ev.target,id=t.id;
+  if(id==='lq'){S.exf.q=t.value;S.exf.limit=30;var ll=$('#libList');if(ll)ll.innerHTML=libListHtml();}
+  else if(id==='cMin'){S.calc.min=Math.max(1,Math.min(240,num(t.value,30)));var co=$('#cOut');if(co)co.innerHTML=fmt(netK(ACTS[S.calc.act][1],S.calc.min))+'<small>kcal</small>';var ch=$('#cHint');if(ch)ch.textContent=calcHint();}
+  else if(id==='evK'){S.calc.extra=Math.max(0,num(t.value,0));var eo=$('#evOut');if(eo)eo.innerHTML=evHtml();}
+});
+document.addEventListener('change',function(ev){
+  var t=ev.target,id=t.id;
+  if(id==='tStyle'){var d=S.draft;newDraft({focus:d?d.focus:'ganzkoerper',style:t.value,minutes:d?d.minutes:S.fit.minutes,week:d?d.week:0,seed:0,date:d?d.date:'',planDate:d?d.planDate:'',reason:t.value==='egal'?'':'Dein Wunsch: '+styleName(t.value)+'.'});S.altOpen=-1;renderTraining();}
+  else if(id==='lStyle'){S.exf.style=t.value;S.exf.limit=30;renderTraining();}
+  else if(id==='cAct'){S.calc.act=Number(t.value);var co=$('#cOut');if(co)co.innerHTML=fmt(netK(ACTS[S.calc.act][1],S.calc.min))+'<small>kcal</small>';var ch=$('#cHint');if(ch)ch.textContent=calcHint();}
+  else if(id==='fitPlace'){S.fit.place=t.value.slice(0,60);saveFit();}
+  else if(id==='fitGoal'){S.fit.goal=t.value;saveFit();S.draft=null;renderTraining();}
+  else if(id==='fitCredit'){S.fit.credit=Number(t.value);saveFit();renderSummary();renderTrainCard();}
+  else if(id==='fitSound'){S.fit.sound=t.checked;saveFit();}
+  else if(id&&id.indexOf('rl_')===0){var r=id.slice(3),v=Number(t.value);if(v)S.fit.regionLevel[r]=v;else delete S.fit.regionLevel[r];saveFit();S.draft=null;}
+});
 
 /* ---------- Ereignisse ---------- */
 document.addEventListener('click',function(ev){
