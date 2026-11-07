@@ -1,0 +1,143 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>FB-Antwort-Assistent</title>
+<style>
+  :root { --bg:#faf7f5; --card:#fff; --text:#2a2326; --muted:#7a6f73; --accent:#c2456b; --line:#eadfe2; }
+  @media (prefers-color-scheme: dark) { :root { --bg:#1b1719; --card:#262124; --text:#f3eced; --muted:#a89ca0; --accent:#e5799a; --line:#3a3236; } }
+  * { box-sizing:border-box; }
+  body { margin:0; background:var(--bg); color:var(--text); font:16px/1.5 system-ui,sans-serif; }
+  main { max-width:760px; margin:0 auto; padding:16px; }
+  h1 { font-size:22px; margin:8px 0 4px; }
+  p.sub { color:var(--muted); margin:0 0 16px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:14px; padding:16px; margin-bottom:14px; }
+  .drop { border:2px dashed var(--line); border-radius:12px; padding:22px; text-align:center; color:var(--muted); cursor:pointer; }
+  .drop.over { border-color:var(--accent); }
+  .thumbs { display:flex; flex-wrap:wrap; gap:8px; margin-top:12px; }
+  .thumbs div { position:relative; }
+  .thumbs img { height:80px; border-radius:8px; border:1px solid var(--line); }
+  .thumbs button { position:absolute; top:-6px; right:-6px; border-radius:50%; width:22px; height:22px; border:0; background:var(--accent); color:#fff; cursor:pointer; }
+  textarea { width:100%; min-height:90px; padding:10px; border:1px solid var(--line); border-radius:10px; background:var(--bg); color:var(--text); font:inherit; resize:vertical; }
+  button.primary { background:var(--accent); color:#fff; border:0; border-radius:10px; padding:12px 18px; font:inherit; font-weight:600; cursor:pointer; margin-top:12px; }
+  button.primary:disabled { opacity:.5; cursor:wait; }
+  button.small { background:transparent; color:var(--accent); border:1px solid var(--accent); border-radius:8px; padding:4px 10px; font:inherit; font-size:14px; cursor:pointer; }
+  .row { display:flex; align-items:center; justify-content:space-between; gap:8px; margin:12px 0 4px; font-weight:600; }
+  .tag { display:inline-block; font-size:12px; padding:2px 8px; border-radius:99px; border:1px solid var(--line); color:var(--muted); margin-left:6px; }
+  .skip { color:var(--muted); }
+  .err { color:#c0392b; margin-top:10px; }
+  .mic { margin-left:8px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>FB-Antwort-Assistent</h1>
+  <p class="sub">Screenshots rein, PN- und Kommentar-Entwurf raus. Du prüfst und sendest selbst.</p>
+
+  <div class="card">
+    <div class="drop" id="drop">Screenshots hierher ziehen, einfügen (Strg/Cmd+V) oder klicken</div>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <div class="thumbs" id="thumbs"></div>
+    <div class="row"><span>Notiz (optional)</span><button class="small mic" id="mic" type="button">🎤 Sprechen</button></div>
+    <textarea id="notiz" placeholder="z. B. Person sucht Konto für Perpetual Traveler, war schon bei Wise abgelehnt"></textarea>
+    <button class="primary" id="go">Entwürfe erstellen</button>
+    <div class="err" id="err"></div>
+  </div>
+
+  <div id="out"></div>
+</main>
+<script>
+const files = [];
+const $ = id => document.getElementById(id);
+
+function render() {
+  $('thumbs').innerHTML = '';
+  files.forEach((f, i) => {
+    const d = document.createElement('div');
+    const img = document.createElement('img'); img.src = URL.createObjectURL(f);
+    const b = document.createElement('button'); b.textContent = '×'; b.onclick = () => { files.splice(i,1); render(); };
+    d.append(img, b); $('thumbs').append(d);
+  });
+}
+
+// Bild auf max. 1600 px verkleinern, damit Uploads klein und schnell bleiben
+function verkleinern(file) {
+  return new Promise(res => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, 1600 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      c.toBlob(b => res(new File([b], 'screenshot.jpg', {type:'image/jpeg'})), 'image/jpeg', 0.85);
+    };
+    img.onerror = () => res(file);
+    img.src = URL.createObjectURL(file);
+  });
+}
+
+async function addFiles(list) {
+  for (const f of list) if (f.type.startsWith('image/')) files.push(await verkleinern(f));
+  render();
+}
+
+$('drop').onclick = () => $('file').click();
+$('file').onchange = e => { addFiles(e.target.files); e.target.value = ''; };
+$('drop').ondragover = e => { e.preventDefault(); $('drop').classList.add('over'); };
+$('drop').ondragleave = () => $('drop').classList.remove('over');
+$('drop').ondrop = e => { e.preventDefault(); $('drop').classList.remove('over'); addFiles(e.dataTransfer.files); };
+document.addEventListener('paste', e => addFiles([...e.clipboardData.files]));
+
+// Sprache -> Text (Browser-Spracherkennung, wo verfügbar)
+const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+if (!SR) $('mic').style.display = 'none';
+else {
+  let rec = null;
+  $('mic').onclick = () => {
+    if (rec) { rec.stop(); return; }
+    rec = new SR(); rec.lang = 'de-DE'; rec.continuous = true; rec.interimResults = false;
+    rec.onresult = e => { for (let i = e.resultIndex; i < e.results.length; i++) $('notiz').value += (e.results[i][0].transcript + ' '); };
+    rec.onend = () => { rec = null; $('mic').textContent = '🎤 Sprechen'; };
+    rec.start(); $('mic').textContent = '⏹ Stopp';
+  };
+}
+
+function textBlock(titel, wert) {
+  const wrap = document.createElement('div');
+  const row = document.createElement('div'); row.className = 'row';
+  const t = document.createElement('span'); t.textContent = titel;
+  const b = document.createElement('button'); b.className = 'small'; b.textContent = 'Kopieren';
+  const ta = document.createElement('textarea'); ta.value = wert;
+  b.onclick = async () => { await navigator.clipboard.writeText(ta.value); b.textContent = 'Kopiert ✓'; setTimeout(() => b.textContent = 'Kopieren', 1500); };
+  row.append(t, b); wrap.append(row, ta); return wrap;
+}
+
+function karte(p) {
+  const c = document.createElement('div'); c.className = 'card';
+  const h = document.createElement('div'); h.style.fontWeight = '700';
+  h.textContent = p.name; const tag = document.createElement('span'); tag.className = 'tag'; tag.textContent = p.thema; h.append(tag);
+  const k = document.createElement('p'); k.className = p.sucht_hilfe ? '' : 'skip';
+  k.textContent = (p.sucht_hilfe ? '' : 'Kein Entwurf: ') + p.einschaetzung + (p.post_kurz ? ' (' + p.post_kurz + ')' : '');
+  c.append(h, k);
+  if (p.sucht_hilfe) c.append(textBlock('PN', p.pn), textBlock('Kommentar (öffentlich)', p.kommentar));
+  return c;
+}
+
+$('go').onclick = async () => {
+  $('err').textContent = ''; $('out').innerHTML = '';
+  if (!files.length) { $('err').textContent = 'Bitte zuerst Screenshots hinzufügen.'; return; }
+  $('go').disabled = true; $('go').textContent = 'Wird ausgewertet …';
+  const fd = new FormData(); files.forEach(f => fd.append('bilder', f)); fd.append('notiz', $('notiz').value);
+  try {
+    const r = await fetch('/analyze', { method:'POST', body: fd });
+    const j = await r.json();
+    if (!r.ok) throw new Error(j.fehler || 'Unbekannter Fehler');
+    if (!j.posts.length) $('out').textContent = 'Auf den Screenshots wurde kein passender Post erkannt.';
+    j.posts.forEach(p => $('out').append(karte(p)));
+  } catch (e) { $('err').textContent = e.message; }
+  $('go').disabled = false; $('go').textContent = 'Entwürfe erstellen';
+};
+</script>
+</body>
+</html>
