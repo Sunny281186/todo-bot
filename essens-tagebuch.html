@@ -296,6 +296,23 @@ a.pick{text-decoration:none;color:var(--ink)}
 .ob-body .p-title{text-align:left}
 #onb{z-index:95}
 #onb .p-controls{position:sticky;bottom:0;background:var(--bg);padding-top:12px;margin-top:auto}
+#relaxer{z-index:92}
+.pacer-wrap{position:relative;display:grid;place-items:center;width:min(78vw,320px);height:min(78vw,320px);margin:6px auto}
+.pacer{width:100%;height:100%;border-radius:50%;background:radial-gradient(circle at 50% 38%,color-mix(in srgb,var(--protein) 55%,transparent),color-mix(in srgb,var(--kcal) 38%,transparent));box-shadow:0 0 70px color-mix(in srgb,var(--kcal) 30%,transparent);transition-property:transform;transition-timing-function:ease-in-out}
+.pacer-label{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:4px;pointer-events:none}
+.ci{display:flex;flex-direction:column;gap:4px}
+.ci-row{display:grid;grid-template-columns:78px 1fr;align-items:center;gap:8px}
+.ci-label{font-size:12px;font-weight:800;color:var(--muted)}
+.ci-btns{display:grid;grid-template-columns:repeat(5,1fr);gap:4px}
+.ci-btns button{border:1.5px solid var(--line);background:transparent;border-radius:10px;padding:9px 0;font-weight:800;font-size:14px;color:var(--ink)}
+.ci-btns button[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.ci-scale{display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin:0 0 8px 86px;font-weight:600}
+.range{width:100%;accent-color:var(--accent)}
+.rxdl{margin:0;display:flex;flex-direction:column;gap:10px}
+.rxdl dt{font-size:11.5px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--muted)}
+.rxdl dd{margin:2px 0 0}
+.round[aria-pressed="true"]{border-color:var(--accent);color:var(--accent)}
+@media (prefers-reduced-motion:reduce){.pacer{transition:none!important}}
 
 @media (max-width:380px){
   .items li{grid-template-columns:minmax(0,1fr) auto 32px}
@@ -314,9 +331,11 @@ a.pick{text-decoration:none;color:var(--ink)}
       <p class="eyebrow" id="eyebrow"></p>
       <h1 id="viewTitle">Heute</h1>
     </div>
-    <div class="datenav" id="datenav" role="group" aria-label="Zeitraum wählen">
+    <div style="display:flex;gap:8px;align-items:center"><div class="datenav" id="datenav" role="group" aria-label="Zeitraum wählen">
       <button class="round" data-act="nav-prev" aria-label="Zurück"><span data-ico="chevL" data-size="20"></span></button>
       <button class="round" data-act="nav-next" aria-label="Weiter"><span data-ico="chevR" data-size="20"></span></button>
+    </div>
+    <button class="round" id="profBtn" data-view="profil" aria-label="Profil" aria-pressed="false"><span data-ico="user" data-size="20"></span></button>
     </div>
   </header>
 
@@ -338,6 +357,11 @@ a.pick{text-decoration:none;color:var(--ink)}
     <div id="tcontent" class="view"></div>
   </section>
 
+  <section class="view" id="v-entspannung" aria-label="Entspannung" hidden>
+    <div class="subnav" id="rsubnav" role="tablist"></div>
+    <div id="rcontent" class="view"></div>
+  </section>
+
   <section class="view" id="v-profil" aria-label="Profil" hidden>
     <section class="card" id="body" aria-label="Körperdaten und Ziel"></section>
     <section class="card" id="goalsCard" aria-label="Tagesziele"></section>
@@ -351,7 +375,7 @@ a.pick{text-decoration:none;color:var(--ink)}
     <button class="tb" role="tab" data-view="heute" aria-selected="true" aria-label="Heute"><span data-ico="ring" data-size="22"></span><span class="lbl">Heute</span></button>
     <button class="tb" role="tab" data-view="woche" aria-selected="false" aria-label="Woche"><span data-ico="chart" data-size="22"></span><span class="lbl">Woche</span></button>
     <button class="tb" role="tab" data-view="training" aria-selected="false" aria-label="Training"><span data-ico="dumbbell" data-size="22"></span><span class="lbl">Training</span></button>
-    <button class="tb" role="tab" data-view="profil" aria-selected="false" aria-label="Profil"><span data-ico="user" data-size="22"></span><span class="lbl">Profil</span></button>
+    <button class="tb" role="tab" data-view="entspannung" aria-selected="false" aria-label="Entspannung"><span data-ico="breath" data-size="22"></span><span class="lbl">Ruhe</span></button>
   </div>
   <button class="fab" data-act="open-add" aria-label="Mahlzeit hinzufügen"><span data-ico="plus" data-size="28"></span></button>
 </nav>
@@ -371,6 +395,7 @@ a.pick{text-decoration:none;color:var(--ink)}
   </div>
   <div id="pane"></div>
 </div>
+<div class="player" id="relaxer" role="dialog" aria-modal="true" aria-label="Entspannung" hidden></div>
 <div class="player" id="onb" role="dialog" aria-modal="true" aria-label="Einrichtung" hidden></div>
 <div class="player" id="player" role="dialog" aria-modal="true" aria-label="Workout" hidden></div>
 <div id="toast" role="status" aria-live="polite" hidden></div>
@@ -434,7 +459,7 @@ var S={db:null,sample:null,uid:null,ready:false,view:'heute',date:todayStr(),slo
   prefs:{meat:-1,fish:-1,avoid:[]},prefsKey:'',goalsKey:'',
   body:{sex:'',age:'',height:'',weight:'',job:'',pal:1.4,target:'',tempo:0.5},bodyKey:'',bodyInit:false,
   weekStart:'',weekMeals:[],weights:[],weekAi:null,weekBusy:false,
-  fit:null,fitKey:'',lib:[],libById:{},styles:[],sessions:[],draft:null,tsub:'workout',exf:{q:'',reg:'',style:'',only:true,limit:30},exOpen:'',calc:{act:0,min:30,extra:0,cat:'Kuchen und Torten',sel:[]},altOpen:-1,player:false};
+  fit:null,fitKey:'',lib:[],libById:{},styles:[],sessions:[],draft:null,tsub:'workout',exf:{q:'',reg:'',style:'',only:true,limit:30},exOpen:'',calc:{act:0,min:30,extra:0,cat:'Kuchen und Torten',sel:[]},altOpen:-1,player:false,rxSessions:[]};
 var profileRef=null,mealsCol=null,unsubDay=null,unsubWeek=null,toastT=null,delT=null,lastFocus=null,lastResults=[];
 
 /* ---------- Hilfen ---------- */
@@ -500,6 +525,8 @@ function renderHeader(){
     t.textContent=dateLabel(S.date);nav.hidden=false;
   }else if(S.view==='woche'){
     e.textContent=weekLabel();t.textContent='Woche';nav.hidden=false;
+  }else if(S.view==='entspannung'){
+    e.textContent='Zur Ruhe kommen';t.textContent='Entspannung';nav.hidden=true;
   }else if(S.view==='training'){
     e.textContent=(S.fit&&S.fit.place)?S.fit.place:'Dein Training';t.textContent='Training';nav.hidden=true;
   }else{
@@ -507,12 +534,14 @@ function renderHeader(){
   }
 }
 function setView(v,push){
-  if(['heute','woche','training','profil'].indexOf(v)<0)v='heute';
+  if(['heute','woche','training','entspannung','profil'].indexOf(v)<0)v='heute';
   S.view=v;
-  ['heute','woche','training','profil'].forEach(function(n){$('#v-'+n).hidden=(n!==v);});
+  ['heute','woche','training','entspannung','profil'].forEach(function(n){$('#v-'+n).hidden=(n!==v);});
   document.querySelectorAll('.tb').forEach(function(b){b.setAttribute('aria-selected',String(b.dataset.view===v));});
+  var pb=$('#profBtn');if(pb)pb.setAttribute('aria-pressed',String(v==='profil'));
   renderHeader();
   if(v==='training')renderTraining();
+  if(v==='entspannung')renderRelax();
   if(push!==false){try{location.hash=v;}catch(e){}}
   window.scrollTo(0,0);
 }
@@ -542,6 +571,7 @@ async function boot(){
     if(S.profile.goals)S.goals=Object.assign({},S.goals,S.profile.goals);
     if(S.profile.prefs)S.prefs=Object.assign({meat:-1,fish:-1,avoid:[]},S.profile.prefs);
     if(S.profile.fit){var ft=Object.assign(defaultFit(),S.profile.fit),fk2=JSON.stringify(ft);if(fk2!==S.fitKey){S.fit=ft;S.fitKey=fk2;S.draft=null;if(S.view==='training'&&!S.player)renderTraining();}}
+    if(S.profile.relax&&S.profile.relax.links){var lk=JSON.stringify(S.profile.relax.links);if(lk!==RXST.linksKey){RXST.linksKey=lk;RXST.links=JSON.parse(lk);if(S.view==='entspannung'&&!RXS)renderRelax();}}
     var gk=JSON.stringify(S.goals);if(gk!==S.goalsKey){S.goalsKey=gk;renderGoals();}
     var pk=JSON.stringify(S.prefs);if(pk!==S.prefsKey){S.prefsKey=pk;renderPrefs();}
     if(S.profile.body){var bk=skey(S.profile.body);if(bk!==S.bodyKey){S.bodyKey=bk;S.body=Object.assign({},S.body,S.profile.body);renderBody();}}
@@ -564,7 +594,7 @@ async function boot(){
     S.recents=snap.docs.map(function(d){var o=d.data();o.id=d.id;return o;});
     refreshSearch();
   },function(){});
-  subDay();subWeek();subTraining();
+  subDay();subWeek();subTraining();subRelax();
   profileRef.collection('weights').orderBy('date','desc').limit(60).onSnapshot(function(snap){
     S.weights=snap.docs.map(function(d){return d.data();}).sort(function(a,b){return a.date<b.date?1:-1;});
     renderWeek();
@@ -972,11 +1002,8 @@ function renderWeek(){
     }).join('')+'<div class="wk-goal" style="bottom:'+(goal/max*100)+'%"></div></div>'+
     '<div class="wk-days">'+DAYS.map(function(x,i){return '<span'+(st.days[i]===todayStr()?' class="today"':'')+'>'+x+'</span>';}).join('')+'</div>';
   var wsd=S.sessions.filter(function(x){return x.done&&x.date>=S.weekStart&&x.date<=shiftDate(S.weekStart,6);}),wsN=wsd.length,wsK=wsd.reduce(function(a,x){return a+(x.kcal||0);},0);
-  var stats='';
-  if(st.avg){
-    stats='<div class="stats"><div class="stat"><span>Ø pro Tag</span><b>'+fmt(st.avg.kcal)+' kcal</b></div><div class="stat"><span>Tagesziel</span><b>'+fmt(goal)+' kcal</b></div>'+
-      '<div class="stat wide"><span>Trainings diese Woche</span><b>'+wsN+' × · '+fmt(wsK)+' kcal</b></div><div class="stat wide"><span>Ø Makros pro Tag</span>'+macroChips(st.avg)+'</div></div>';
-  }
+  var actTiles='<div class="stat wide"><span>Trainings diese Woche</span><b>'+wsN+' × · '+fmt(wsK)+' kcal</b></div><div class="stat wide"><span>Entspannung diese Woche</span><b>'+rxWeekText()+'</b></div>';
+  var stats='<div class="stats">'+(st.avg?'<div class="stat"><span>Ø pro Tag</span><b>'+fmt(st.avg.kcal)+' kcal</b></div><div class="stat"><span>Tagesziel</span><b>'+fmt(goal)+' kcal</b></div>':'')+actTiles+(st.avg?'<div class="stat wide"><span>Ø Makros pro Tag</span>'+macroChips(st.avg)+'</div>':'')+'</div>';
   var wi=weightInfo(),now='<span class="hint">Noch kein Gewicht eingetragen.</span>';
   if(wi){
     var dl='';
@@ -1004,7 +1031,7 @@ async function weekAI(){
     tageUeberZiel:st.over,kalorienProTag:st.idx.map(function(i){return DAYS[i]+': '+r0(st.tot[i].kcal);}),
     kalorienNachMahlzeit:Object.keys(st.slot).map(function(k){return k+': '+r0(st.slot[k]);}),
     gewicht:wi?{aktuell:wi.cur.kg,vorher:wi.prev?wi.prev.kg:null}:null,
-    zielgewicht:num(b.target)||null,beruf:b.job||null,situation:(S.profile.about||'').slice(0,600)};
+    zielgewicht:num(b.target)||null,beruf:b.job||null,situation:(S.profile.about||'').slice(0,600),entspannung:rxWeekStats()};
   S.weekBusy=true;renderWeek();
   try{
     var r=await S.sample('Du bist ein freundlicher, sachlicher Ernährungscoach. Hier sind die Daten einer Ernährungswoche als JSON:\n'+JSON.stringify(data)+
@@ -1187,7 +1214,7 @@ var DOWS={2:[0,3],3:[0,2,4],4:[0,1,3,4],5:[0,1,2,4,5],6:[0,1,2,3,4,5]};
 var WEEKADJ=[{ds:-1,fn:1},{ds:0,fn:1},{ds:0,fn:1.15},{ds:-1,fn:0.9}];
 var WEEKNAMES=['Einstieg','Aufbau','Steigerung','Entlastung'];
 var WEEKTEXT=['Etwas weniger Sätze, die Technik sitzt sauber.','Volle Sätze, die Technik festigt sich.','Mehr Wiederholungen und mehr Spannung.','Weniger Umfang, der Körper erholt sich.'];
-var NOWC=['yoga','pilates','mobility','faszien','taichi','schwimmen','walking','pool'];
+var NOWC=['yoga','pilates','mobility','faszien','taichi','schwimmen','walking','pool','somatik'];
 var ACTS=[['Zügiges Gehen',4.3],['Radfahren locker',5.8],['Joggen locker',7],['Wassergymnastik',5.3],['Schwimmen locker',6],['Calisthenics',3.8],['Zirkeltraining',6],['HIIT',8],['Yoga',2.5],['Pilates',2.8],['Tanzen',5],['Springseil',10],['Treppensteigen',8]];
 var EXTRAS=[['Stück Kuchen',350],['Stück Torte',450],['Bier 0,5 l',215],['Cocktail',250],['Pizza',800],['Eis (3 Kugeln)',300],['Pommes',400]];
 IC.dumbbell='<path d="M6.5 6.5v11M17.5 6.5v11M3.5 9v6M20.5 9v6M6.5 12h11"/>';
@@ -2016,6 +2043,348 @@ function obInput(ev){
 }
 document.addEventListener('input',obInput);
 document.addEventListener('change',obInput);
+
+/* ---------- Entspannung ---------- */
+IC.breath='<path d="M4 9h9a2.5 2.5 0 1 0-2.5-2.5M3 13h13a2.5 2.5 0 1 1-2.5 2.5M5 17h6"/>';
+var RSUBS=[['start','Start'],['atmen','Atmen'],['timer','Timer'],['klaenge','Klänge'],['verlauf','Verlauf']];
+var RX_CATS=[['atmen','Atmen'],['koerper','Körper entspannen'],['geist','Meditation und Tiefenruhe'],['schlaf','Schlaf und Klänge']];
+var RELAX=[
+ {id:'box',cat:'atmen',name:'Box-Breathing (4-4-4-4)',kurz:'Gleichmäßig atmen: vier Sekunden ein, halten, aus, halten.',fuer:'Alle, die schnell ruhiger und klarer werden wollen.',wann:'Vor Terminen, bei Anspannung, zwischendurch.',so:'Vier gleich lange Phasen, wie die Seiten eines Quadrats.',min:3,tool:'breath:box',q:'Box Breathing Anleitung',trend:true},
+ {id:'b478',cat:'atmen',name:'4-7-8-Atmung',kurz:'Vier Sekunden ein, sieben halten, acht aus.',fuer:'Alle, die abends schwer abschalten.',wann:'Zum Einschlafen und bei innerer Unruhe.',so:'Das lange Ausatmen beruhigt.',min:3,tool:'breath:b478',q:'4-7-8 Atmung Anleitung',trend:true},
+ {id:'coh',cat:'atmen',name:'Ruhiges Atmen (Kohärenz)',kurz:'Fünf Sekunden ein, fünf Sekunden aus, etwa sechs Atemzüge pro Minute.',fuer:'Einsteiger. Jeden Tag einsetzbar.',wann:'Morgens, abends und in Pausen.',so:'Gleichmäßiger, langsamer Rhythmus ohne Anhalten.',min:5,tool:'breath:coh',q:'Kohärente Atmung 5 Sekunden Anleitung',trend:true},
+ {id:'sigh',cat:'atmen',name:'Seufzer-Atmung',kurz:'Zweimal kurz einatmen, dann lang ausatmen.',fuer:'Alle bei akutem Stress.',wann:'Wenn du dich überfordert fühlst, ein bis drei Minuten.',so:'Der zweite Einatmer füllt die Lungen, das lange Ausatmen löst.',min:2,tool:'breath:sigh',q:'Physiological sigh Anleitung',trend:true},
+ {id:'pmr',cat:'koerper',name:'Progressive Muskelentspannung',kurz:'Muskelgruppen nacheinander anspannen und wieder loslassen.',fuer:'Alle mit körperlicher Anspannung und Verspannungen.',wann:'Abends, nach langen Tagen, vor dem Schlafen.',so:'Ein geführtes Video nimmt dich Schritt für Schritt mit.',min:15,q:'Progressive Muskelentspannung Anleitung deutsch'},
+ {id:'bodyscan',cat:'koerper',name:'Body Scan',kurz:'Die Aufmerksamkeit wandert langsam durch den ganzen Körper.',fuer:'Alle, die schlecht abschalten oder einschlafen.',wann:'Abends, bei Anspannung, nach dem Training.',so:'Geführt im Liegen, von den Füßen bis zum Kopf.',min:15,q:'Body Scan Meditation geführt deutsch'},
+ {id:'autogen',cat:'koerper',name:'Autogenes Training',kurz:'Mit ruhigen Formeln wie „Mein Arm ist schwer und warm“ Ruhe aufbauen.',fuer:'Alle, die feste, vertraute Abläufe mögen.',wann:'Täglich üben, dann wirkt es schneller.',so:'Immer dieselben Formeln, im Sitzen oder Liegen.',min:15,q:'Autogenes Training Anleitung deutsch'},
+ {id:'zittern',cat:'koerper',name:'Somatisches Zittern',kurz:'Der Körper darf locker zittern und schütteln, im Stehen oder Liegen.',fuer:'Alle, die Anspannung im Körper spüren und Bewegung mögen.',wann:'Nach stressigen Tagen oder zum Runterkommen.',so:'Sanft beginnen. Bei Schwindel oder Übelkeit eine Pause machen.',min:10,tool:'zittern',q:'Somatisches Zittern Anleitung',trend:true},
+ {id:'med_atem',cat:'geist',name:'Atem-Meditation',kurz:'Du beobachtest den Atem und kommst immer wieder zu ihm zurück.',fuer:'Einsteiger.',wann:'Täglich 5 bis 10 Minuten.',so:'Sitzen, Atem spüren, abgeschweifte Gedanken freundlich zurückholen.',min:10,tool:'timer',q:'Atemmeditation geführt deutsch'},
+ {id:'med_ged',cat:'geist',name:'Gedanken beobachten',kurz:'Gedanken kommen und gehen lassen wie Wolken.',fuer:'Alle, die viel grübeln.',wann:'Bei Gedankenkarussell, abends.',so:'Nicht festhalten, nur bemerken.',min:10,tool:'timer',q:'Gedanken beobachten Meditation geführt'},
+ {id:'med_guete',cat:'geist',name:'Güte-Meditation (Metta)',kurz:'Wohlwollende Wünsche für dich und andere.',fuer:'Alle, die streng mit sich sind.',wann:'Bei Selbstkritik, Ärger oder Einsamkeit.',so:'Still wiederholte, freundliche Sätze.',min:10,tool:'timer',q:'Metta Güte Meditation deutsch'},
+ {id:'med_gehen',cat:'geist',name:'Gehmeditation',kurz:'Langsam gehen und jeden Schritt wahrnehmen.',fuer:'Alle, die nicht still sitzen mögen.',wann:'Nach dem Essen, in Pausen, unterwegs.',so:'Wahrnehmen, wie der Fuß aufsetzt und abrollt.',min:10,tool:'timer',q:'Gehmeditation Anleitung'},
+ {id:'nidra',cat:'geist',name:'Yoga Nidra (NSDR)',kurz:'Geführte Tiefenentspannung im Liegen: wach, aber ganz losgelassen.',fuer:'Alle, die müde, überreizt oder schlecht erholt sind.',wann:'Mittags statt Nickerchen oder abends.',so:'Liegen und der Stimme folgen, 10 bis 30 Minuten.',min:20,q:'Yoga Nidra deutsch',trend:true},
+ {id:'fantasie',cat:'geist',name:'Fantasiereise',kurz:'Eine geführte Reise an einen ruhigen inneren Ort.',fuer:'Alle, die sich Bilder gut vorstellen können.',wann:'Zum Abschalten oder Einschlafen.',so:'Augen zu, zuhören, mitgehen.',min:15,q:'Fantasiereise Entspannung deutsch'},
+ {id:'schlaf',cat:'schlaf',name:'Einschlaf-Routine',kurz:'Eine feste Abfolge, die dem Körper sagt: gleich ist Schlafenszeit.',fuer:'Alle mit Einschlafproblemen.',wann:'Jeden Abend zur gleichen Zeit.',so:'Zum Beispiel Licht dämpfen, Bildschirm weg, 4-7-8-Atmung oder Body Scan, Klänge mit Sleep-Timer.',min:20,tool:'sounds',q:'Einschlafmeditation deutsch'},
+ {id:'klang',cat:'schlaf',name:'Klänge zum Entspannen',kurz:'Rauschen, Regen, Meer oder Wind, direkt in der App erzeugt.',fuer:'Alle, die Ruhe oder Abschirmung brauchen.',wann:'Beim Einschlafen, Lesen, Arbeiten oder nach Reisen im Lärm.',so:'Mit Sleep-Timer, der sanft ausblendet.',min:30,tool:'sounds',q:'Klangbad Entspannung',trend:true}
+];
+var BREATH={
+  box:{name:'Box-Breathing',ph:[['Einatmen',4,'in'],['Halten',4,'hold'],['Ausatmen',4,'out'],['Halten',4,'hold']]},
+  b478:{name:'4-7-8-Atmung',ph:[['Einatmen',4,'in'],['Halten',7,'hold'],['Ausatmen',8,'out']]},
+  coh:{name:'Ruhiges Atmen',ph:[['Einatmen',5,'in'],['Ausatmen',5,'out']]},
+  sigh:{name:'Seufzer-Atmung',ph:[['Einatmen',2,'in'],['Nachatmen',1,'in2'],['Lang ausatmen',6,'out']]}
+};
+var SOUNDS=[['white','Weißes Rauschen'],['pink','Rosa Rauschen'],['brown','Braunes Rauschen'],['rain','Regen'],['ocean','Meer'],['wind','Wind']];
+var RXST={links:{},linksKey:'',open:'',sub:'start',ci:{s:0,m:0},rb:{tech:'box',min:3,pre:{s:0,m:0}},rt:{min:10,startBell:true,interval:0,pre:{s:0,m:0}},sound:true,form:null,filter:''};
+var RXS=null,rxTimer=null,rxWake=null,rxCtx=null;
+var SND={ctx:null,src:null,gain:null,lfo:null,lg:null,id:'',vol:0.5,min:0,endAt:0,iv:null};
+
+function saveRelax(){
+  RXST.linksKey=JSON.stringify(RXST.links);
+  clearTimeout(saveRelax.t);
+  saveRelax.t=setTimeout(function(){saveProfile({relax:{links:RXST.links}}).catch(function(e){toast(errMsg(e));});},500);
+}
+function subRelax(){
+  profileRef.collection('relax').orderBy('ts','desc').limit(200).onSnapshot(function(snap){
+    S.rxSessions=snap.docs.map(function(d){var o=d.data();o.id=d.id;return o;});
+    renderWeek();if(S.view==='entspannung'&&!RXS&&(RXST.sub==='start'||RXST.sub==='verlauf'))renderRelax();
+  },function(){});
+}
+function rxById(id){return RELAX.filter(function(r){return r.id===id;})[0];}
+function rxLinks(id){return RXST.links[id]||[];}
+function rxTone(freq,ms,vol){
+  if(!RXST.sound)return;
+  try{rxCtx=rxCtx||new (window.AudioContext||window.webkitAudioContext)();if(rxCtx.state==='suspended')rxCtx.resume();
+    var o=rxCtx.createOscillator(),g=rxCtx.createGain();o.type='sine';o.frequency.value=freq;
+    var t=rxCtx.currentTime;g.gain.setValueAtTime(0.0001,t);g.gain.exponentialRampToValueAtTime(vol||0.08,t+0.03);g.gain.exponentialRampToValueAtTime(0.0001,t+ms/1000);
+    o.connect(g);g.connect(rxCtx.destination);o.start(t);o.stop(t+ms/1000+0.05);}catch(e){}
+}
+function rxBell(){rxTone(528,2600,0.12);rxTone(792,2200,0.06);}
+function ciHtml(key,obj){
+  function row(f,label,val,low,high){
+    return '<div class="ci-row"><span class="ci-label">'+label+'</span><div class="ci-btns">'+[1,2,3,4,5].map(function(n){return '<button data-act="rx-ci" data-t="'+key+'" data-f="'+f+'" data-v="'+n+'" aria-pressed="'+(val===n)+'">'+n+'</button>';}).join('')+'</div></div><div class="ci-scale"><span>'+low+'</span><span>'+high+'</span></div>';
+  }
+  return '<div class="ci">'+row('s','Stress',obj.s,'ruhig','sehr angespannt')+row('m','Stimmung',obj.m,'mies','super')+'</div>';
+}
+function ciTarget(key){
+  if(key==='start')return RXST.ci;if(key==='rbpre')return RXST.rb.pre;if(key==='rtpre')return RXST.rt.pre;
+  if(key==='fpre')return RXST.form&&RXST.form.pre;if(key==='fpost')return RXST.form&&RXST.form.post;if(key==='rpost')return RXS&&RXS.post;return null;
+}
+function ciVal(o){return (o&&(o.s||o.m))?{s:o.s||0,m:o.m||0}:null;}
+function rxSuggest(s){
+  if(s>=4)return {t:'Viel Anspannung. Zuerst ein bis drei Minuten Seufzer-Atmung oder ruhiges Atmen, danach Body Scan oder Yoga Nidra.',b:['sigh','coh']};
+  if(s===3)return {t:'Mittlere Anspannung. Box-Breathing oder zehn Minuten Atem-Meditation passen gut.',b:['box','coh']};
+  if(s>=1)return {t:'Du wirkst ziemlich entspannt. Eine kurze Atem-Pause hält das so.',b:['coh']};
+  return null;
+}
+
+/* ---------- Ansichten ---------- */
+function renderRelax(){
+  var sn=$('#rsubnav'),tc=$('#rcontent');if(!sn||!tc)return;
+  sn.innerHTML=RSUBS.map(function(s){return '<button class="sn" role="tab" data-act="rx-sub" data-s="'+s[0]+'" aria-selected="'+(RXST.sub===s[0])+'">'+s[1]+'</button>';}).join('');
+  var fn={start:rxStartTab,atmen:rxBreathTab,timer:rxTimerTab,klaenge:rxSoundTab,verlauf:rxHistTab}[RXST.sub]||rxStartTab;
+  tc.innerHTML=fn();
+}
+function rxCard(r){
+  var open=RXST.open===r.id,links=rxLinks(r.id);
+  var cat=RX_CATS.filter(function(c){return c[0]===r.cat;})[0][1];
+  var tool=r.tool?'<button class="btn primary" data-act="rx-tool" data-id="'+r.id+'">'+ico('play',16)+' '+(r.tool==='sounds'?'Klänge öffnen':r.tool==='timer'?'Timer starten':r.tool==='zittern'?'Übungen öffnen':'Starten')+'</button>':'';
+  var h='<div class="card"><div class="ex-head"><div style="min-width:0"><div class="ex-name">'+esc(r.name)+'</div><div class="ex-rx">'+esc(cat)+' · ca. '+r.min+' Min.</div></div>'+(r.trend?'<span class="badge">Trend</span>':'')+'</div>'+
+    '<p style="margin:0">'+esc(r.kurz)+'</p>'+
+    '<div class="chiprow">'+tool+'<a class="mini" href="'+esc('https://www.youtube.com/results?search_query='+encodeURIComponent(r.q))+'" target="_blank" rel="noopener">Video suchen</a>'+
+    allChannels().filter(function(c){return chHandle(c.url);}).map(function(c){return '<a class="mini" href="'+esc(chSearch(c,r.q))+'" target="_blank" rel="noopener">Bei '+esc(c.n)+'</a>';}).join('')+
+    '<button class="mini" data-act="rx-open" data-id="'+r.id+'">'+(open?'Weniger':'Mehr')+'</button></div>'+
+    (links.length?'<div class="tag-list">'+links.map(function(u,i){return '<span class="tag"><a href="'+esc(u)+'" target="_blank" rel="noopener" style="color:inherit">Dein Video '+(i+1)+'</a><button class="x" data-act="rx-lnkrm" data-id="'+r.id+'" data-i="'+i+'" aria-label="Link entfernen">'+ico('x',14)+'</button></span>';}).join('')+'</div>':'');
+  if(open){
+    h+='<dl class="rxdl"><div><dt>Für wen</dt><dd>'+esc(r.fuer)+'</dd></div><div><dt>Wann es hilft</dt><dd>'+esc(r.wann)+'</dd></div><div><dt>So läuft es ab</dt><dd>'+esc(r.so)+'</dd></div></dl>'+
+      '<div class="row"><label class="field"><span>Eigenen Video-Link hinzufügen (mehrere möglich)</span><input class="in" id="rxLink_'+r.id+'" placeholder="https://www.youtube.com/watch?v=…" autocomplete="off"></label><button class="mini" data-act="rx-lnkadd" data-id="'+r.id+'">Hinzufügen</button></div>';
+    var f=RXST.form&&RXST.form.id===r.id?RXST.form:null;
+    if(f){
+      h+='<div class="review"><h3>Als erledigt eintragen</h3><label class="field"><span>Minuten</span><input class="in" id="rxFormMin" type="number" inputmode="numeric" min="1" max="240" value="'+f.min+'"></label>'+
+        '<div><h3 style="margin-bottom:6px">Check-in vorher (freiwillig)</h3>'+ciHtml('fpre',f.pre)+'</div><div><h3 style="margin-bottom:6px">Check-out nachher (freiwillig)</h3>'+ciHtml('fpost',f.post)+'</div>'+
+        '<div class="btns"><button class="btn primary block" data-act="rx-formsave">Speichern</button><button class="btn" data-act="rx-formcancel">Abbrechen</button></div></div>';
+    }else h+='<div class="btns"><button class="btn" data-act="rx-formopen" data-id="'+r.id+'">Als erledigt eintragen</button></div>';
+  }
+  return h+'</div>';
+}
+function rxStartTab(){
+  var ci=RXST.ci,sug=rxSuggest(ci.s);
+  var h='<div class="card"><h2>Wie fühlst du dich gerade?</h2><p class="hint">Freiwillig. Dein Check-in hilft dir, Muster zu erkennen.</p>'+ciHtml('start',ci)+
+    (sug?'<p style="margin:0;font-weight:700">'+esc(sug.t)+'</p><div class="chiprow">'+sug.b.map(function(id){var r=rxById(id);return '<button class="chipbtn" data-act="rx-sugg" data-id="'+id+'">'+esc(r.name)+' starten</button>';}).join('')+'</div>':'')+
+    '<div class="btns"><button class="btn" data-act="rx-cisave">Check-in speichern</button></div></div>';
+  h+='<div class="card"><h2>Gerade beliebt</h2><p style="margin:0">„Nervensystem-Regulation“ ist das große Schlagwort 2026: Entspannen, das den Körper wirklich herunterfährt. Dazu gehören Atemübungen, Klänge, Yoga Nidra und sanfte Körperarbeit wie Zittern. Passende Übungen sind mit „Trend“ markiert.</p></div>';
+  RX_CATS.forEach(function(c){
+    h+='<h3 style="margin:8px 4px 0">'+esc(c[1])+'</h3>'+RELAX.filter(function(r){return r.cat===c[0];}).map(rxCard).join('');
+  });
+  h+=channelsCard();
+  return h;
+}
+function rxBreathTab(){
+  var b=RXST.rb;
+  return '<div class="card"><h2>Atemübung</h2><p class="hint">Ein Kreis zeigt dir den Rhythmus. Wähle die Technik und die Dauer.</p>'+
+    '<div class="chiprow">'+Object.keys(BREATH).map(function(k){return '<button class="chipbtn" data-act="rx-btech" data-t="'+k+'" aria-pressed="'+(b.tech===k)+'">'+esc(BREATH[k].name)+'</button>';}).join('')+'</div>'+
+    '<p class="hint" style="margin:0">'+BREATH[b.tech].ph.map(function(p){return p[0]+' '+p[1]+' s';}).join(' · ')+'</p>'+
+    '<div class="field"><span>Dauer</span><div class="chiprow">'+[1,3,5,10].map(function(m){return '<button class="chipbtn" data-act="rx-bmin" data-m="'+m+'" aria-pressed="'+(b.min===m)+'">'+m+' Min.</button>';}).join('')+'</div></div>'+
+    '<div><h3 style="margin-bottom:6px">Check-in vorher (freiwillig)</h3>'+ciHtml('rbpre',b.pre)+'</div>'+
+    '<label style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" id="rxSound"'+(RXST.sound?' checked':'')+'> Sanfte Töne beim Phasenwechsel</label>'+
+    '<div class="btns"><button class="btn primary block" data-act="rx-bgo">'+ico('play',18)+' Starten</button></div></div>';
+}
+function rxTimerTab(){
+  var t=RXST.rt;
+  return '<div class="card"><h2>Meditations-Timer</h2><p class="hint">Ein stiller Timer mit Glocke. Für Meditationen ohne Anleitung oder zum Hören eines eigenen Videos.</p>'+
+    '<div class="field"><span>Dauer</span><div class="chiprow">'+[3,5,10,15,20,30,45].map(function(m){return '<button class="chipbtn" data-act="rx-tmin" data-m="'+m+'" aria-pressed="'+(t.min===m)+'">'+m+' Min.</button>';}).join('')+'</div></div>'+
+    '<label style="display:flex;gap:10px;align-items:center;font-weight:600"><input type="checkbox" id="rtStart"'+(t.startBell?' checked':'')+'> Glocke zum Start</label>'+
+    '<label class="field"><span>Zwischenglocke</span><select class="in" id="rtInterval">'+[[0,'Aus'],[1,'Jede Minute'],[5,'Alle 5 Minuten'],[10,'Alle 10 Minuten']].map(function(o){return '<option value="'+o[0]+'"'+(t.interval===o[0]?' selected':'')+'>'+o[1]+'</option>';}).join('')+'</select></label>'+
+    '<div><h3 style="margin-bottom:6px">Check-in vorher (freiwillig)</h3>'+ciHtml('rtpre',t.pre)+'</div>'+
+    '<div class="btns"><button class="btn primary block" data-act="rx-tgo">'+ico('play',18)+' Starten</button></div></div>';
+}
+function rxSoundTab(){
+  var on=!!SND.id,left=SND.endAt?Math.max(0,Math.ceil((SND.endAt-Date.now())/60000)):0;
+  return '<div class="card"><h2>Klänge</h2><p class="hint">Die Klänge werden direkt in der App erzeugt. Sie laufen, solange die Seite offen ist und das Gerät nicht gesperrt wird.</p>'+
+    '<div class="chiprow">'+SOUNDS.map(function(s){return '<button class="chipbtn" data-act="rx-snd" data-id="'+s[0]+'" aria-pressed="'+(SND.id===s[0])+'">'+s[1]+'</button>';}).join('')+'</div>'+
+    '<label class="field"><span>Lautstärke</span><input type="range" id="sndVol" min="0" max="100" value="'+Math.round(SND.vol*100)+'" class="range"></label>'+
+    '<div class="field"><span>Sleep-Timer</span><div class="chiprow">'+[[0,'Aus'],[15,'15 Min.'],[30,'30 Min.'],[60,'60 Min.'],[120,'2 Std.']].map(function(o){return '<button class="chipbtn" data-act="rx-sndmin" data-m="'+o[0]+'" aria-pressed="'+(SND.min===o[0])+'">'+o[1]+'</button>';}).join('')+'</div></div>'+
+    '<p class="msg" id="sndInfo">'+(on?'Läuft: '+esc((SOUNDS.filter(function(s){return s[0]===SND.id;})[0]||['',''])[1])+(SND.endAt?' · noch ca. '+left+' Min.':''):'Tippe auf einen Klang, um zu starten.')+'</p>'+
+    (on?'<div class="btns"><button class="btn primary block" data-act="rx-sndstop">Stoppen</button></div>':'')+'</div>';
+}
+function rxWeekStats(){
+  var end=shiftDate(S.weekStart,6),list=(S.rxSessions||[]).filter(function(x){return x.type!=='checkin'&&x.date>=S.weekStart&&x.date<=end;});
+  var mins=list.reduce(function(a,x){return a+(x.minutes||0);},0),pre=[],post=[];
+  list.forEach(function(x){if(x.pre&&x.pre.s&&x.post&&x.post.s){pre.push(x.pre.s);post.push(x.post.s);}});
+  var avg=function(a){return a.length?Math.round(a.reduce(function(s,v){return s+v;},0)/a.length*10)/10:null;};
+  return {einheiten:list.length,minuten:mins,stressVorher:avg(pre),stressNachher:avg(post)};
+}
+function rxWeekText(){
+  var w=rxWeekStats();
+  return w.einheiten+' × · '+w.minuten+' Min.'+(w.stressVorher!==null?' · Stress '+String(w.stressVorher).replace('.',',')+' → '+String(w.stressNachher).replace('.',','):'');
+}
+function rxHistTab(){
+  var all=S.rxSessions||[],w=rxWeekStats();
+  var h='<div class="card"><h2>Diese Woche</h2><div class="stats"><div class="stat"><span>Einheiten</span><b>'+w.einheiten+'</b></div><div class="stat"><span>Minuten</span><b>'+w.minuten+'</b></div>'+
+    '<div class="stat wide"><span>Stress im Schnitt (1 ruhig bis 5 sehr angespannt)</span><b>'+(w.stressVorher!==null?String(w.stressVorher).replace('.',',')+' vorher → '+String(w.stressNachher).replace('.',',')+' nachher':'Noch keine Check-ins vor und nach einer Übung')+'</b></div></div></div>';
+  h+='<div class="card"><h2>Zuletzt</h2>'+(all.length?all.slice(0,30).map(function(x){
+    var c='';if(x.pre||x.post){c=(x.pre&&x.pre.s?'Stress '+x.pre.s:'')+(x.post&&x.post.s?' → '+x.post.s:'')+(x.pre&&x.pre.m?' · Stimmung '+x.pre.m:'')+(x.post&&x.post.m?' → '+x.post.m:'');}
+    return '<div class="srow"><div class="mmain"><div class="mtitle">'+esc(x.title||'Check-in')+'</div><div class="msub"><span>'+esc(parseD(x.date).toLocaleDateString('de-DE',{weekday:'short',day:'numeric',month:'short'}))+(x.minutes?' · '+x.minutes+' Min.':'')+(c?' · '+esc(c):'')+'</span></div></div><button class="x" data-act="rx-del" data-id="'+esc(x.id)+'" aria-label="Löschen">'+ico('trash',16)+'</button></div>';
+  }).join(''):'<p class="hint">Noch nichts eingetragen.</p>')+'</div>';
+  return h;
+}
+
+/* ---------- Läufe: Atmen und Timer ---------- */
+async function rxBegin(type){
+  var pat=type==='breath'?BREATH[RXST.rb.tech]:null,min=type==='breath'?RXST.rb.min:RXST.rt.min;
+  RXS={type:type,tech:type==='breath'?RXST.rb.tech:'timer',title:type==='breath'?pat.name:'Meditations-Timer',plan:min*60,pre:ciVal(type==='breath'?RXST.rb.pre:RXST.rt.pre),post:{s:0,m:0},el:0,last:Date.now(),paused:false,fin:false,confirm:false,pi:0,pel:0,iv:0,startedAt:Date.now()};
+  var pl=$('#relaxer');pl.hidden=false;document.body.style.overflow='hidden';
+  try{rxCtx=rxCtx||new (window.AudioContext||window.webkitAudioContext)();if(rxCtx.resume)rxCtx.resume();}catch(e){}
+  try{if(navigator.wakeLock)rxWake=await navigator.wakeLock.request('screen');}catch(e){rxWake=null;}
+  if(type==='timer'&&RXST.rt.startBell)rxBell();
+  rxOverlay();clearInterval(rxTimer);rxTimer=setInterval(rxTick,100);
+}
+function rxPhaseStart(){
+  var pat=BREATH[RXS.tech],ph=pat.ph[RXS.pi],pc=$('#pacer');if(!pc)return;
+  var sc=ph[2]==='in'?1:ph[2]==='in2'?1.12:ph[2]==='out'?0.45:null;
+  var lab=$('#rxPhase');if(lab)lab.textContent=ph[0];
+  if(sc!==null){pc.style.transitionDuration=ph[1]+'s';pc.style.transform='scale('+sc+')';}
+  rxTone(ph[2]==='out'?392:ph[2]==='hold'?440:523,260,0.05);
+}
+function rxTick(){
+  if(!RXS||RXS.fin||RXS.confirm){if(RXS)RXS.last=Date.now();return;}
+  var now=Date.now(),dt=(now-RXS.last)/1000;RXS.last=now;
+  if(RXS.paused)return;
+  RXS.el+=dt;
+  if(RXS.type==='breath'){
+    var ph=BREATH[RXS.tech].ph;RXS.pel+=dt;
+    if(RXS.pel>=ph[RXS.pi][1]){RXS.pel-=ph[RXS.pi][1];RXS.pi=(RXS.pi+1)%ph.length;rxPhaseStart();}
+    var c=$('#rxCount');if(c)c.textContent=Math.max(1,Math.ceil(ph[RXS.pi][1]-RXS.pel));
+  }else{
+    var iv=RXST.rt.interval;
+    if(iv>0){var k=Math.floor(RXS.el/(iv*60));if(k>RXS.iv&&RXS.el<RXS.plan-5){RXS.iv=k;rxTone(660,1500,0.07);}}
+    setRing('R',Math.min(100,RXS.el/RXS.plan*100));
+  }
+  var tl=$('#rxTotal');if(tl)tl.textContent=fmtT(Math.max(0,RXS.plan-RXS.el));
+  var pg=$('#rxProg');if(pg)pg.style.width=Math.min(100,RXS.el/RXS.plan*100)+'%';
+  if(RXS.el>=RXS.plan){rxBell();RXS.fin=true;rxOverlay();}
+}
+function rxOverlay(){
+  var el=$('#relaxer');if(!el||!RXS)return;
+  var pct=RXS.fin?100:Math.round(RXS.el/RXS.plan*100);
+  var head='<div class="p-top"><div class="p-prog"><i id="rxProg" style="width:'+pct+'%"></i></div><button class="round" data-act="rx-end" aria-label="Beenden">'+ico('x',20)+'</button></div>';
+  if(RXS.fin){
+    el.innerHTML=head+'<div class="p-body"><p class="eyebrow">Geschafft</p><h1 class="p-title">'+esc(RXS.title)+' beendet</h1><div class="stats" style="width:100%"><div class="stat"><span>Dauer</span><b>'+Math.max(1,Math.round(RXS.el/60))+' Min.</b></div></div>'+
+      '<div style="width:100%;text-align:left"><h3 style="margin-bottom:6px">Check-out (freiwillig)</h3>'+ciHtml('rpost',RXS.post)+'</div>'+
+      '<div class="btns" style="width:100%"><button class="btn primary block" data-act="rx-save">Speichern</button><button class="btn" data-act="rx-discard">Verwerfen</button></div></div>';
+    return;
+  }
+  if(RXS.confirm){
+    el.innerHTML=head+'<div class="p-body"><p class="eyebrow">Beenden?</p><h1 class="p-title">Übung beenden</h1><p class="how">Bisher: '+Math.max(1,Math.round(RXS.el/60))+' Min.</p><div class="btns" style="width:100%"><button class="btn primary block" data-act="rx-finish">Speichern und beenden</button><button class="btn" data-act="rx-discard">Verwerfen</button><button class="btn" data-act="rx-cont">Weitermachen</button></div></div>';
+    return;
+  }
+  var body;
+  if(RXS.type==='breath'){
+    body='<p class="eyebrow">'+esc(RXS.title)+'</p><div class="pacer-wrap"><div class="pacer" id="pacer" style="transform:scale(.45);transition-duration:0s"></div><div class="pacer-label"><div id="rxPhase" class="rc-sub" style="margin:0;font-size:18px;color:var(--ink)"></div><div id="rxCount" class="rc-num" style="font-size:44px">'+BREATH[RXS.tech].ph[RXS.pi][1]+'</div></div></div><p class="how">Noch <span id="rxTotal">'+fmtT(Math.max(0,RXS.plan-RXS.el))+'</span></p>';
+  }else{
+    body='<p class="eyebrow">'+esc(RXS.title)+'</p>'+ringMarkup('R','big','<span class="rc-num" id="rxTotal">'+fmtT(Math.max(0,RXS.plan-RXS.el))+'</span><span class="rc-sub">Minuten</span>')+'<p class="how">Setz dich bequem hin und atme ruhig.</p>';
+  }
+  el.innerHTML=head+'<div class="p-body">'+body+'</div><div class="p-controls"><div class="btns" style="flex-wrap:nowrap"><button class="btn" data-act="rx-pause" style="flex:1">'+(RXS.paused?'Weiter':'Pause')+'</button><button class="btn" data-act="rx-end" style="flex:1">Beenden</button></div></div>';
+  if(RXS.type==='breath'){requestAnimationFrame(function(){requestAnimationFrame(rxPhaseStart);});}
+  else setRing('R',RXS.el/RXS.plan*100);
+}
+function rxClose(){
+  clearInterval(rxTimer);rxTimer=null;RXS=null;
+  var el=$('#relaxer');if(el){el.hidden=true;el.innerHTML='';}
+  document.body.style.overflow=(S.sheet||OB)?'hidden':'';
+  try{if(rxWake&&rxWake.release)rxWake.release();}catch(e){}rxWake=null;
+}
+async function rxSaveSession(doc){
+  if(!profileRef){toast(errMsg({code:'invalid_argument'}));return false;}
+  try{await profileRef.collection('relax').add(doc);return true;}catch(e){toast(errMsg(e));return false;}
+}
+/* ---------- Klänge ---------- */
+function sndBuf(ctx,type){
+  var len=ctx.sampleRate*4,buf=ctx.createBuffer(1,len,ctx.sampleRate),d=buf.getChannelData(0),i;
+  if(type==='brown'){var last=0;for(i=0;i<len;i++){var w=Math.random()*2-1;last=(last+0.02*w)/1.02;d[i]=last*3.5;}}
+  else if(type==='pink'){var b0=0,b1=0,b2=0,b3=0,b4=0,b5=0,b6=0;for(i=0;i<len;i++){var x=Math.random()*2-1;b0=0.99886*b0+x*0.0555179;b1=0.99332*b1+x*0.0750759;b2=0.969*b2+x*0.153852;b3=0.8665*b3+x*0.3104856;b4=0.55*b4+x*0.5329522;b5=-0.7616*b5-x*0.016898;d[i]=(b0+b1+b2+b3+b4+b5+b6+x*0.5362)*0.11;b6=x*0.115926;}}
+  else{for(i=0;i<len;i++)d[i]=(Math.random()*2-1)*0.5;}
+  return buf;
+}
+var SNDK={white:0.35,pink:0.9,brown:0.9,rain:0.8,ocean:1,wind:1.2};
+function sndStop(keepInfo){
+  try{if(SND.src){SND.src.stop();}if(SND.lfo){SND.lfo.stop();}}catch(e){}
+  SND.src=null;SND.lfo=null;SND.gain=null;SND.lg=null;SND.id='';
+  clearInterval(SND.iv);SND.iv=null;if(!keepInfo)SND.endAt=0;
+}
+function sndStart(id){
+  sndStop(true);
+  try{
+    var ctx=SND.ctx=SND.ctx||new (window.AudioContext||window.webkitAudioContext)();if(ctx.resume)ctx.resume();
+    var base=id==='white'?'white':(id==='brown'||id==='ocean')?'brown':'pink';
+    var src=ctx.createBufferSource();src.buffer=sndBuf(ctx,base);src.loop=true;
+    var g=ctx.createGain();g.gain.value=SND.vol*(SNDK[id]||1);
+    var chain=src;
+    if(id==='rain'){var hp=ctx.createBiquadFilter();hp.type='highpass';hp.frequency.value=900;chain.connect(hp);chain=hp;}
+    if(id==='wind'){var bp=ctx.createBiquadFilter();bp.type='bandpass';bp.frequency.value=500;bp.Q.value=0.8;var lfo=ctx.createOscillator();lfo.frequency.value=0.12;var lg=ctx.createGain();lg.gain.value=300;lfo.connect(lg);lg.connect(bp.frequency);lfo.start();chain.connect(bp);chain=bp;SND.lfo=lfo;}
+    if(id==='ocean'){var lfo2=ctx.createOscillator();lfo2.frequency.value=0.09;var lg2=ctx.createGain();lg2.gain.value=SND.vol*0.5;lfo2.connect(lg2);lg2.connect(g.gain);lfo2.start();SND.lfo=lfo2;SND.lg=lg2;}
+    chain.connect(g);g.connect(ctx.destination);src.start();
+    SND.src=src;SND.gain=g;SND.id=id;
+    sndTimerSet();
+  }catch(e){toast('Der Ton ist hier nicht verfügbar.');SND.id='';}
+}
+function sndTimerSet(){
+  clearInterval(SND.iv);SND.iv=null;
+  if(SND.min>0&&SND.id){
+    SND.endAt=Date.now()+SND.min*60000;
+    SND.iv=setInterval(function(){
+      var left=SND.endAt-Date.now();
+      if(left<=0){sndStop(false);if(S.view==='entspannung'&&RXST.sub==='klaenge'&&!RXS)renderRelax();return;}
+      if(left<20000&&SND.gain){SND.gain.gain.value=SND.vol*(SNDK[SND.id]||1)*(left/20000);}
+      var info=$('#sndInfo');if(info&&SND.id)info.textContent='Läuft: '+((SOUNDS.filter(function(s){return s[0]===SND.id;})[0]||['',''])[1])+' · noch ca. '+Math.ceil(left/60000)+' Min.';
+    },1000);
+  }else SND.endAt=0;
+}
+
+/* ---------- Ereignisse ---------- */
+document.addEventListener('click',function(ev){
+  var b=ev.target.closest('[data-act^="rx-"]');if(!b)return;
+  var act=b.dataset.act,id=b.dataset.id;
+  if(act==='rx-sub'){RXST.sub=b.dataset.s;renderRelax();window.scrollTo(0,0);}
+  else if(act==='rx-ci'){
+    var o=ciTarget(b.dataset.t);if(!o)return;var f=b.dataset.f,v=Number(b.dataset.v);o[f]=(o[f]===v)?0:v;
+    if(b.dataset.t==='rpost'){rxOverlay();}else renderRelax();
+  }
+  else if(act==='rx-cisave'){
+    var c=ciVal(RXST.ci);if(!c){toast('Wähle zuerst Stress oder Stimmung aus.');return;}
+    rxSaveSession({date:todayStr(),ts:Date.now(),type:'checkin',title:'Check-in',minutes:0,pre:c,post:null}).then(function(ok){if(ok){toast('Check-in gespeichert');RXST.ci={s:0,m:0};renderRelax();}});
+  }
+  else if(act==='rx-open'){RXST.open=(RXST.open===id?'':id);RXST.form=null;renderRelax();}
+  else if(act==='rx-sugg'){var r0x=rxById(id);RXST.rb.tech=r0x.tool.split(':')[1];RXST.rb.min=r0x.min<=3?r0x.min:3;RXST.sub='atmen';renderRelax();window.scrollTo(0,0);}
+  else if(act==='rx-tool'){
+    var r=rxById(id);
+    if(r.tool.indexOf('breath:')===0){RXST.rb.tech=r.tool.split(':')[1];RXST.sub='atmen';}
+    else if(r.tool==='timer'){RXST.sub='timer';}
+    else if(r.tool==='sounds'){RXST.sub='klaenge';}
+    else if(r.tool==='zittern'){S.exf.style='somatik';S.exf.reg='';S.exf.q='';S.exf.limit=30;S.tsub='uebungen';setView('training');return;}
+    renderRelax();window.scrollTo(0,0);
+  }
+  else if(act==='rx-lnkadd'){
+    var inp=$('#rxLink_'+id),u=(inp.value||'').trim();
+    if(!/^https?:\/\//i.test(u)){toast('Bitte einen Link mit https:// eintragen.');return;}
+    var arr=(RXST.links[id]||[]).slice();if(arr.indexOf(u)<0)arr.push(u);RXST.links[id]=arr;saveRelax();toast('Link gespeichert');renderRelax();
+  }
+  else if(act==='rx-lnkrm'){var a2=(RXST.links[id]||[]).slice();a2.splice(Number(b.dataset.i),1);if(a2.length)RXST.links[id]=a2;else delete RXST.links[id];saveRelax();renderRelax();}
+  else if(act==='rx-formopen'){var rr=rxById(id);RXST.form={id:id,min:rr.min,pre:{s:0,m:0},post:{s:0,m:0}};renderRelax();}
+  else if(act==='rx-formcancel'){RXST.form=null;renderRelax();}
+  else if(act==='rx-formsave'){
+    var fm=RXST.form;if(!fm)return;var mi=Math.max(1,Math.min(240,num(($('#rxFormMin')||{}).value,fm.min)));
+    var rd=rxById(fm.id);
+    rxSaveSession({date:todayStr(),ts:Date.now(),type:'logged',tech:fm.id,title:rd.name,minutes:mi,pre:ciVal(fm.pre),post:ciVal(fm.post)}).then(function(ok){if(ok){toast('Eingetragen');RXST.form=null;renderRelax();}});
+  }
+  else if(act==='rx-btech'){RXST.rb.tech=b.dataset.t;renderRelax();}
+  else if(act==='rx-bmin'){RXST.rb.min=Number(b.dataset.m);renderRelax();}
+  else if(act==='rx-bgo')rxBegin('breath');
+  else if(act==='rx-tmin'){RXST.rt.min=Number(b.dataset.m);renderRelax();}
+  else if(act==='rx-tgo')rxBegin('timer');
+  else if(act==='rx-pause'){if(RXS){RXS.paused=!RXS.paused;RXS.last=Date.now();rxOverlay();}}
+  else if(act==='rx-end'){if(RXS&&!RXS.fin){RXS.confirm=true;rxOverlay();}else if(RXS){var sv=$('[data-act="rx-save"]');if(sv)sv.click();}}
+  else if(act==='rx-cont'){if(RXS){RXS.confirm=false;RXS.last=Date.now();rxOverlay();}}
+  else if(act==='rx-finish'){if(RXS){RXS.fin=true;RXS.confirm=false;rxOverlay();}}
+  else if(act==='rx-discard'){rxClose();toast('Verworfen');}
+  else if(act==='rx-save'){
+    if(!RXS)return;var s2=RXS;
+    rxSaveSession({date:todayStr(),ts:Date.now(),type:s2.type,tech:s2.tech,title:s2.title,minutes:Math.max(1,Math.round(s2.el/60)),pre:s2.pre,post:ciVal(s2.post)}).then(function(ok){if(ok){rxClose();toast('Gespeichert');if(S.view==='entspannung')renderRelax();}});
+  }
+  else if(act==='rx-snd'){if(SND.id===id){sndStop(false);}else sndStart(id);renderRelax();}
+  else if(act==='rx-sndmin'){SND.min=Number(b.dataset.m);sndTimerSet();renderRelax();}
+  else if(act==='rx-sndstop'){sndStop(false);renderRelax();}
+  else if(act==='rx-del'){if(profileRef)profileRef.collection('relax').doc(id).delete().then(function(){toast('Gelöscht');}).catch(function(e){toast(errMsg(e));});}
+});
+function rxDiscardMsg(){rxClose();}
+document.addEventListener('input',function(ev){
+  var t=ev.target;
+  if(t.id==='sndVol'){SND.vol=Number(t.value)/100;if(SND.gain)SND.gain.gain.value=SND.vol*(SNDK[SND.id]||1);if(SND.lg)SND.lg.gain.value=SND.vol*0.5;}
+});
+document.addEventListener('change',function(ev){
+  var t=ev.target;
+  if(t.id==='rxSound')RXST.sound=t.checked;
+  else if(t.id==='rtStart')RXST.rt.startBell=t.checked;
+  else if(t.id==='rtInterval')RXST.rt.interval=Number(t.value);
+});
 
 /* ---------- Ereignisse ---------- */
 document.addEventListener('click',function(ev){
