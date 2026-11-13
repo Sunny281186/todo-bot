@@ -36,6 +36,17 @@
   --shadow:0 12px 32px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.35);
   color-scheme:dark;
 }
+.seg.wv-seg{grid-template-columns:repeat(2,minmax(0,1fr))}
+.avg-big{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap;margin:4px 0 2px}.avg-big b{font-size:34px;letter-spacing:-.02em;font-variant-numeric:tabular-nums}.avg-big small{color:var(--muted);font-weight:600}
+.pillst{display:inline-block;padding:5px 11px;border-radius:999px;font-size:13px;font-weight:700;background:var(--accent-soft);color:var(--ink)}.pillst.over{background:rgba(214,70,60,.18)}.pillst.low{background:var(--surface-2);color:var(--muted)}
+.avgrow{margin:12px 0 0}.avgrow .top{display:flex;justify-content:space-between;gap:8px;font-size:13.5px;font-weight:600}.avgrow .top span:last-child{color:var(--muted);font-variant-numeric:tabular-nums}
+.track{height:10px;border-radius:999px;background:var(--surface-2);overflow:hidden;margin-top:5px}.track i{display:block;height:100%;border-radius:999px}
+.cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:5px;margin-top:8px}.cal .dn{font-size:11.5px;font-weight:700;color:var(--muted);text-align:center;padding-bottom:2px}
+.cal .d{aspect-ratio:1/1.08;border-radius:12px;background:var(--surface-2);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:1px;font-variant-numeric:tabular-nums;border:2px solid transparent}
+.cal .d.x{background:transparent}.cal .d .n{font-size:12px;font-weight:700}.cal .d .k{font-size:10px;color:var(--muted)}
+.cal .d.ok{background:var(--accent-soft)}.cal .d.over{background:rgba(214,70,60,.18)}.cal .d.low{border-color:var(--line)}.cal .d.today{border-color:var(--accent)}
+.legend{display:flex;flex-wrap:wrap;gap:6px 14px;font-size:12.5px;color:var(--muted);margin-top:10px}.legend i{display:inline-block;width:12px;height:12px;border-radius:4px;margin-right:5px;vertical-align:-2px}
+.kwrow{display:grid;grid-template-columns:96px 1fr 58px;gap:10px;align-items:center;margin:10px 0;font-size:13px}.kwrow .t{position:relative;height:14px;border-radius:999px;background:var(--surface-2)}.kwrow .t i{position:absolute;left:0;top:0;bottom:0;border-radius:999px;background:var(--kcal)}.kwrow .t i.over{background:var(--warn)}.kwrow .t u{position:absolute;top:-3px;bottom:-3px;width:2px;background:var(--ink);opacity:.55}.kwrow b{text-align:right;font-variant-numeric:tabular-nums}
 ul.know{margin:6px 0 4px;padding-left:20px}ul.know li{margin:6px 0}.know-h{margin:18px 0 4px;font-size:16px}.know-box{background:var(--surface-2);border-radius:16px;padding:12px 14px;margin:10px 0}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
@@ -576,7 +587,7 @@ function renderHeader(){
     e.textContent=parseD(S.date).toLocaleDateString('de-DE',{weekday:'long',day:'numeric',month:'long'});
     t.textContent=dateLabel(S.date);nav.hidden=false;
   }else if(S.view==='woche'){
-    e.textContent=weekLabel();t.textContent='Woche';nav.hidden=false;
+    e.textContent=S.wview==='month'?monthLabel():weekLabel();t.textContent=S.wview==='month'?'Monat':'Woche';nav.hidden=false;
   }else if(S.view==='entspannung'){
     e.textContent='Zur Ruhe kommen';t.textContent='Entspannung';nav.hidden=true;
   }else if(S.view==='training'){
@@ -1013,6 +1024,91 @@ function weekInsights(st){
   if(st.maxI>=0)out.push('Der kalorienreichste Tag war '+DAYN[st.maxI]+' mit '+r0(st.tot[st.maxI].kcal)+' kcal.');
   return out.slice(0,5);
 }
+/* ---------- Wochenschnitt und Monatsüberblick ---------- */
+function wvSeg(){
+  return '<div class="seg wv-seg" role="tablist" aria-label="Zeitraum"><button role="tab" data-act="wv" data-v="week" aria-selected="'+(S.wview!=='month')+'">Woche</button><button role="tab" data-act="wv" data-v="month" aria-selected="'+(S.wview==='month')+'">Monat</button></div>';
+}
+function monthStartOf(){if(!S.monthStart)S.monthStart=todayStr().slice(0,8)+'01';return S.monthStart;}
+function monthLabel(){
+  var ms=monthStartOf(),cur=ms===todayStr().slice(0,8)+'01';
+  return (cur?'Dieser Monat · ':'')+parseD(ms).toLocaleDateString('de-DE',{month:'long',year:'numeric'});
+}
+function monthShift(dir){var d=parseD(monthStartOf());S.monthStart=dstr(new Date(d.getFullYear(),d.getMonth()+dir,1));}
+function monthEnd(){var d=parseD(monthStartOf());return dstr(new Date(d.getFullYear(),d.getMonth()+1,0));}
+var unsubMonth=null;
+function subMonth(){
+  if(!mealsCol)return;
+  if(unsubMonth)unsubMonth();
+  unsubMonth=mealsCol.where('date','>=',monthStartOf()).where('date','<=',monthEnd()).onSnapshot(function(snap){
+    S.monthMeals=snap.docs.map(function(d){var o=d.data();o.id=d.id;return o;});
+    if(S.view==='woche'&&S.wview==='month')renderWeek();
+  },function(){});
+}
+function avgCardHtml(title,avg,n,span,note){
+  var g=S.goals,h='<div class="card"><h2>'+title+'</h2>';
+  if(!avg)return h+'<p class="hint">'+esc(note)+'</p></div>';
+  var diff=avg.kcal-g.kcal,tol=g.kcal*0.05;
+  var st=Math.abs(diff)<=tol?['im Ziel','']:diff>0?['+'+fmt(diff)+' kcal über dem Ziel','over']:['−'+fmt(Math.abs(diff))+' kcal unter dem Ziel','low'];
+  h+='<div class="avg-big"><b>'+fmt(avg.kcal)+'</b><small>kcal pro Tag im Schnitt, Ziel '+fmt(g.kcal)+'</small></div><span class="pillst '+st[1]+'">'+st[0]+'</span>';
+  [['protein','Eiweiß','var(--protein)'],['carbs','Kohlenhydrate','var(--carbs)'],['fat','Fett','var(--fat)']].forEach(function(m){
+    var goal=num(g[m[0]]),v=avg[m[0]],pc=goal?v/goal*100:0;
+    h+='<div class="avgrow"><div class="top"><span>'+m[1]+'</span><span>Ø '+r0(v)+' g'+(goal?' von '+r0(goal)+' g ('+r0(pc)+' %)':'')+'</span></div><div class="track"><i style="width:'+Math.min(100,pc)+'%;background:'+m[2]+'"></i></div></div>';
+  });
+  h+='<p class="hint" style="margin-top:12px">Ausgewertet: '+n+' von '+span+' Tagen mit Einträgen. '+esc(note)+'</p></div>';
+  return h;
+}
+function weekAvgCard(st){
+  return avgCardHtml('Wochenschnitt',st.avg,st.n,7,'Der heutige Tag zählt erst ab morgen mit. Ein einzelner Tag darüber oder darunter spielt keine Rolle, der Schnitt zählt.');
+}
+function renderMonth(){
+  var el=$('#week');if(!el)return;
+  var ms=monthStartOf(),me=monthEnd(),g=S.goals,today=todayStr();
+  var first=parseD(ms),ndays=parseD(me).getDate(),off=(first.getDay()+6)%7;
+  var by={},i,dates=[];
+  for(i=0;i<ndays;i++){var d=shiftDate(ms,i);dates.push(d);by[d]=[];}
+  (S.monthMeals||[]).forEach(function(m){if(by[m.date])by[m.date].push(m);});
+  var tot={},ev=[];dates.forEach(function(d){tot[d]=totals(by[d]);if(by[d].length&&d<today)ev.push(d);});
+  var n=ev.length,sum={kcal:0,protein:0,carbs:0,fat:0};
+  ev.forEach(function(d){sum.kcal+=tot[d].kcal;sum.protein+=tot[d].protein;sum.carbs+=tot[d].carbs;sum.fat+=tot[d].fat;});
+  var avg=n?{kcal:sum.kcal/n,protein:sum.protein/n,carbs:sum.carbs/n,fat:sum.fat/n}:null;
+  var okN=0,overN=0,lowN=0;
+  function cls(k){return k>g.kcal*1.05?'over':k<g.kcal*0.7?'low':'ok';}
+  ev.forEach(function(d){var c=cls(tot[d].kcal);if(c==='ok')okN++;else if(c==='over')overN++;else lowN++;});
+  var h=wvSeg()+avgCardHtml('Monatsschnitt',avg,n,ndays,'Der heutige Tag zählt erst ab morgen mit.');
+  // Kalender
+  var cells=DAYS.map(function(x){return '<div class="dn">'+x+'</div>';}).join('');
+  for(i=0;i<off;i++)cells+='<div class="d x"></div>';
+  dates.forEach(function(d,k){
+    var t=tot[d].kcal,c=by[d].length?cls(t):'';
+    cells+='<div class="d '+c+(d===today?' today':'')+'"><span class="n">'+(k+1)+'</span>'+(by[d].length?'<span class="k">'+r0(t)+'</span>':'')+'</div>';
+  });
+  h+='<div class="card"><h2>Kalender</h2><div class="cal" role="img" aria-label="Kalorien pro Tag im Monat">'+cells+'</div>'+
+    '<div class="legend"><span><i style="background:var(--accent-soft)"></i>im Ziel ('+okN+')</span><span><i style="background:rgba(214,70,60,.18)"></i>über dem Ziel ('+overN+')</span><span><i style="border:2px solid var(--line)"></i>deutlich drunter ('+lowN+')</span></div>'+
+    '<p class="hint">Die Zahl ist die Tagessumme in kcal. Im Ziel heißt: höchstens 5 % über und mindestens 70 % deines Kalorienziels.</p></div>';
+  // Wochen im Überblick
+  var wk={},order=[];
+  ev.forEach(function(d){var m=mondayOf(d);if(!wk[m]){wk[m]={n:0,k:0};order.push(m);}wk[m].n++;wk[m].k+=tot[d].kcal;});
+  var maxK=g.kcal*1.3;order.forEach(function(m){var a=wk[m].k/wk[m].n;if(a>maxK)maxK=a*1.05;});
+  h+='<div class="card"><h2>Woche für Woche</h2>'+(order.length?order.map(function(m){
+    var a=wk[m].k/wk[m].n,lab=parseD(m).toLocaleDateString('de-DE',{day:'numeric',month:'short'});
+    return '<div class="kwrow"><span>ab '+esc(lab)+'</span><div class="t"><i class="'+(a>g.kcal*1.05?'over':'')+'" style="width:'+(a/maxK*100)+'%"></i><u style="left:'+(g.kcal/maxK*100)+'%"></u></div><b>'+r0(a)+'</b></div>';
+  }).join('')+'<p class="hint">Durchschnitt pro Tag in kcal. Der dunkle Strich ist dein Tagesziel.</p>':'<p class="hint">Sobald du in diesem Monat Tage eingetragen hast, siehst du hier jede Woche im Vergleich.</p>')+'</div>';
+  // Gewicht
+  var wl=(S.weights||[]).filter(function(w){return w.date>=ms&&w.date<=me;}).sort(function(a,b){return a.date<b.date?-1:1;});
+  var wh='<p class="hint">In diesem Monat ist noch kein Gewicht eingetragen.</p>';
+  if(wl.length){
+    var a0=wl[0],a1=wl[wl.length-1],dd=a1.kg-a0.kg;
+    wh='<div class="stats"><div class="stat"><span>Erster Eintrag</span><b>'+fmt1(a0.kg)+' kg</b></div><div class="stat"><span>Letzter Eintrag</span><b>'+fmt1(a1.kg)+' kg</b></div>'+
+      (wl.length>1?'<div class="stat wide"><span>Veränderung im Monat</span><b>'+(dd>0?'+':'')+fmt1(dd).replace('-','−')+' kg</b></div>':'')+'</div>';
+  }
+  h+='<div class="card"><h2>Gewicht im Monat</h2>'+wh+'</div>';
+  // Aktivität
+  var ses=(S.sessions||[]).filter(function(x){return x.done&&x.date>=ms&&x.date<=me;}),sk=ses.reduce(function(a,x){return a+(x.kcal||0);},0);
+  var rx=(S.rxSessions||[]).filter(function(x){return x.type!=='checkin'&&x.date>=ms&&x.date<=me;}),rm=rx.reduce(function(a,x){return a+(x.minutes||0);},0);
+  h+='<div class="card"><h2>Bewegung und Entspannung</h2><div class="stats"><div class="stat"><span>Trainings</span><b>'+ses.length+' ×</b></div><div class="stat"><span>Verbrannt</span><b>'+fmt(sk)+' kcal</b></div>'+
+    '<div class="stat"><span>Entspannung</span><b>'+rx.length+' ×</b></div><div class="stat"><span>Minuten</span><b>'+rm+'</b></div></div></div>';
+  el.innerHTML=h;
+}
 function weightInfo(){
   var end=shiftDate(S.weekStart,6);
   var list=S.weights.filter(function(w){return w.date<=end;});
@@ -1034,6 +1130,7 @@ function sparkline(){
 }
 function renderWeek(){
   var el=$('#week');if(!el)return;
+  if(S.wview==='month'){renderMonth();return;}
   var old=$('#wKg'),keep=old?old.value:'';
   var st=weekStats(),goal=S.goals.kcal;
   var max=Math.max(goal*1.25,1);
@@ -1046,7 +1143,7 @@ function renderWeek(){
     '<div class="wk-days">'+DAYS.map(function(x,i){return '<span'+(st.days[i]===todayStr()?' class="today"':'')+'>'+x+'</span>';}).join('')+'</div>';
   var wsd=S.sessions.filter(function(x){return x.done&&x.date>=S.weekStart&&x.date<=shiftDate(S.weekStart,6);}),wsN=wsd.length,wsK=wsd.reduce(function(a,x){return a+(x.kcal||0);},0);
   var actTiles='<div class="stat wide"><span>Trainings diese Woche</span><b>'+wsN+' × · '+fmt(wsK)+' kcal</b></div><div class="stat wide"><span>Entspannung diese Woche</span><b>'+rxWeekText()+'</b></div>';
-  var stats='<div class="stats">'+(st.avg?'<div class="stat"><span>Ø pro Tag</span><b>'+fmt(st.avg.kcal)+' kcal</b></div><div class="stat"><span>Tagesziel</span><b>'+fmt(goal)+' kcal</b></div>':'')+actTiles+(st.avg?'<div class="stat wide"><span>Ø Makros pro Tag</span>'+macroChips(st.avg)+'</div>':'')+'</div>';
+  var stats='<div class="stats">'+actTiles+'</div>';
   var wi=weightInfo(),now='<span class="hint">Noch kein Gewicht eingetragen.</span>';
   if(wi){
     var dl='';
@@ -1054,7 +1151,7 @@ function renderWeek(){
     now='<b>'+fmt1(wi.cur.kg)+' <small>kg</small></b><small>'+esc(dl||parseD(wi.cur.date).toLocaleDateString('de-DE',{day:'numeric',month:'short'}))+'</small>';
   }
   var ai=(S.weekAi&&S.weekAi.week===S.weekStart)?'<div class="ai-out">'+esc(S.weekAi.text)+'</div>':'';
-  el.innerHTML=
+  el.innerHTML=wvSeg()+weekAvgCard(st)+
     '<div class="card"><div class="wk-top"><h2>Kalorien pro Tag</h2></div>'+plot+'<p class="hint">Gestrichelte Linie: dein Tagesziel von '+fmt(goal)+' kcal. Rote Balken liegen darüber.</p>'+stats+'</div>'+
     '<div class="card"><h3>Das fällt auf</h3><ul class="insights">'+weekInsights(st).map(function(x){return '<li>'+esc(x)+'</li>';}).join('')+'</ul></div>'+
     '<div class="card"><h3>Gewicht</h3><div class="weight-now">'+now+'</div>'+sparkline()+
@@ -2652,8 +2749,10 @@ document.addEventListener('click',function(ev){
   if(act==='nav-prev'||act==='nav-next'){
     var dir=act==='nav-prev'?-1:1;
     if(S.view==='heute'){S.date=shiftDate(S.date,dir);S.meals=[];renderSummary();renderMeals();subDay();}
+    else if(S.view==='woche'&&S.wview==='month'){monthShift(dir);S.monthMeals=[];renderHeader();renderWeek();subMonth();}
     else if(S.view==='woche'){S.weekStart=shiftDate(S.weekStart,dir*7);S.weekMeals=[];renderHeader();renderWeek();subWeek();}
   }
+  else if(act==='wv'){S.wview=b.dataset.v==='month'?'month':'week';if(S.wview==='month'){S.monthMeals=[];subMonth();}renderHeader();renderWeek();}
   else if(act==='open-add')openAdd();
   else if(act==='close-add')closeAdd();
   else if(act==='slot'){S.slot=b.dataset.slot;renderSlotPills();}
