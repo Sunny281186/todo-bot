@@ -36,6 +36,7 @@
   --shadow:0 12px 32px rgba(0,0,0,.5),0 2px 6px rgba(0,0,0,.35);
   color-scheme:dark;
 }
+ul.know{margin:6px 0 4px;padding-left:20px}ul.know li{margin:6px 0}.know-h{margin:18px 0 4px;font-size:16px}.know-box{background:var(--surface-2);border-radius:16px;padding:12px 14px;margin:10px 0}
 *{box-sizing:border-box}
 [hidden]{display:none!important}
 html{-webkit-text-size-adjust:100%}
@@ -400,6 +401,7 @@ a.pick{text-decoration:none;color:var(--ink)}
   <section class="view" id="v-profil" aria-label="Profil" hidden>
     <section class="card" id="body" aria-label="Körperdaten und Ziel"></section>
     <section class="card" id="goalsCard" aria-label="Tagesziele"></section>
+    <section class="card" id="knowCard" aria-label="Hintergrundwissen zu deinem Körper"></section>
     <section class="card" id="prefs" aria-label="Vorlieben"></section>
     <section class="card" id="aboutCard" aria-label="Über mich"></section>
   </section>
@@ -1137,7 +1139,7 @@ function monthAfter(weeks){return new Date(Date.now()+weeks*7*864e5).toLocaleDat
 function renderBodyResult(){
   var el=$('#bResult');if(!el)return;
   var p=calcPlan(S.body);
-  if(!p){el.innerHTML='<p class="hint">Trage Geschlecht, Alter, Größe und Gewicht ein, dann erscheint hier deine Berechnung.</p>';return;}
+  if(!p){el.innerHTML='<p class="hint">Trage Geschlecht, Alter, Größe und Gewicht ein, dann erscheint hier deine Berechnung.</p>';renderKnow();return;}
   var h='<div><h3>Empfohlen pro Tag</h3><div class="res-kcal">'+fmt(p.kcal)+'<small>kcal</small></div></div>'+macroChips(p)+
     '<div class="stats"><div class="stat"><span>BMI (grobe Orientierung)</span><b>'+fmt1(p.bmi)+'</b></div><div class="stat"><span>Grundumsatz</span><b>'+fmt(p.bmr)+' kcal</b></div><div class="stat wide"><span>Gesamtumsatz mit Alltag und Beruf</span><b>'+fmt(p.tdee)+' kcal</b></div></div>';
   if(p.dir===0){
@@ -1156,7 +1158,7 @@ function renderBodyResult(){
     if(p.tbmi<18.5)h+='<p class="note warnnote">Dein Zielgewicht entspricht einem BMI von '+fmt1(p.tbmi)+' und liegt damit im Untergewicht.</p>';
   }
   h+='<p class="hint">Berechnung nach Mifflin-St-Jeor.</p>';
-  el.innerHTML=h;
+  el.innerHTML=h;renderKnow();
 }
 function renderBody(){
   var el=$('#body');if(!el)return;
@@ -1206,7 +1208,48 @@ function renderGoals(){
     '<label class="field"><span>Eiweiß (g)</span><input class="in" id="gP" type="number" inputmode="numeric" min="0" value="'+r0(g.protein)+'"></label>'+
     '<label class="field"><span>Kohlenhydrate (g)</span><input class="in" id="gC" type="number" inputmode="numeric" min="0" value="'+r0(g.carbs)+'"></label>'+
     '<label class="field"><span>Fett (g)</span><input class="in" id="gF" type="number" inputmode="numeric" min="0" value="'+r0(g.fat)+'"></label></div>'+
-    '<div class="btns"><button class="btn primary block" data-act="save-goals">Ziele speichern</button></div>';
+    '<div class="btns"><button class="btn primary block" data-act="save-goals">Ziele speichern</button></div>';renderKnow();
+}
+
+/* ---------- Profil: Hintergrundwissen ---------- */
+function renderKnow(){
+  var el=$('#knowCard');if(!el)return;
+  var p=calcPlan(S.body),g=S.goals||{};
+  var h='<h2>Dein Körper und deine Ernährung</h2><p class="hint">Hintergrundwissen, passend zu deinen Daten. Es ändert sich, wenn du Körperdaten oder Tagesziele änderst.</p>';
+  if(!p){el.innerHTML=h+'<p class="hint">Trage oben Geschlecht, Alter, Größe und Gewicht ein, dann erscheint hier deine persönliche Erklärung.</p>';return;}
+  var bmiTxt=p.bmi<18.5?'im Untergewicht':p.bmi<25?'im Normalbereich':p.bmi<30?'im leichten Übergewicht':'im Übergewicht';
+  var palTxt=(PAL.filter(function(o){return Math.abs(o[0]-num(S.body.pal,1.4))<0.001;})[0]||['',''])[1];
+  var kc=Math.max(1,num(g.kcal)||p.kcal),pk=num(g.protein)*4/kc*100,fk=num(g.fat)*9/kc*100,ck=num(g.carbs)*4/kc*100;
+  var gp=num(g.protein)||p.protein;
+  var perKg=gp/p.w;
+  var diff=Math.round(kc-p.tdee);
+  var goalTxt=diff<=-100?'Mit deinem Tagesziel isst du ca. '+fmt(Math.abs(diff))+' kcal weniger, als du verbrauchst. So nimmst du langsam ab.':diff>=100?'Mit deinem Tagesziel isst du ca. '+fmt(diff)+' kcal mehr, als du verbrauchst. So nimmst du langsam zu.':'Mit deinem Tagesziel isst du etwa so viel, wie du verbrauchst. So bleibt dein Gewicht stabil.';
+  var water=Math.round(p.w*0.033*10)/10;
+  var n=kc>=2300?4:3;
+  h+='<h3 class="know-h">Dein Körpertyp in Zahlen</h3><ul class="know">'+
+    '<li><b>BMI '+fmt1(p.bmi)+':</b> '+bmiTxt+'. Der BMI ist nur eine grobe Orientierung, weil er Muskeln und Fett nicht unterscheidet.</li>'+
+    '<li><b>Grundumsatz '+fmt(p.bmr)+' kcal:</b> So viel verbraucht dein Körper in völliger Ruhe, für Atmen, Herz, Gehirn und Wärme. Er ist größer bei mehr Körpergewicht, mehr Muskeln, größerer Körpergröße und bei Männern, und er sinkt mit dem Alter.</li>'+
+    '<li><b>Gesamtumsatz '+fmt(p.tdee)+' kcal:</b> Grundumsatz mal Alltagsfaktor ('+(palTxt?esc(palTxt.toLowerCase()):'dein Alltag')+'). Training kommt zusätzlich dazu.</li>'+
+    '<li><b>Dein Ziel:</b> '+goalTxt+'</li></ul>'+
+    '<div class="know-box">Typ-Schubladen wie Ekto-, Meso- oder Endomorph sind grobe Beschreibungen des Körperbaus. Die App rechnet stattdessen mit deinen echten Werten, das ist genauer.</div>';
+  h+='<h3 class="know-h">Warum die Nährstoffe so verteilt sind</h3><ul class="know">'+
+    '<li><b>Eiweiß '+fmt(gp)+' g ('+fmt(pk)+' % der Kalorien, '+fmt1(perKg)+' g pro kg):</b> Eiweiß sättigt am stärksten und schützt deine Muskeln, wenn du abnimmst. Dein Körper verbraucht außerdem 20 bis 30 % der Eiweiß-Energie schon für die Verdauung. Bei Kohlenhydraten sind es 5 bis 10 %, bei Fett unter 3 %. Bei höherem BMI wird mit einem Referenzgewicht (BMI 27) gerechnet, damit der Wert nicht zu hoch ausfällt.</li>'+
+    '<li><b>Fett '+fmt(num(g.fat))+' g ('+fmt(fk)+' %):</b> Fett liefert die meiste Energie pro Gramm. Du brauchst es für Hormone, die Vitamine A, D, E und K und für den Geschmack. Unter etwa 20 % der Kalorien wird es für viele zu wenig. Mehr als 30 bis 35 % macht es schwer, im Defizit zu bleiben.</li>'+
+    '<li><b>Kohlenhydrate '+fmt(num(g.carbs))+' g ('+fmt(ck)+' %):</b> Sie sind der Rest, nachdem Eiweiß und Fett feststehen. Sie sind der schnellste Treibstoff für Gehirn und Training und liefern Ballaststoffe. Wenn du viel trainierst, darfst du ruhig am oberen Ende bleiben. An Ruhetagen reicht weniger.</li></ul>';
+  h+='<h3 class="know-h">Worauf du achten solltest</h3><ul class="know">'+
+    '<li><b>Wochenschnitt statt Tagesperfektion:</b> Ein Tag drüber oder drunter spielt keine Rolle. Entscheidend ist, wo du über die Woche landest.</li>'+
+    '<li><b>Eiweiß bei jeder Mahlzeit:</b> Eier, Quark, Skyr, Joghurt, Hülsenfrüchte, Tofu, Fisch, Geflügel. So erreichst du dein Ziel leichter.</li>'+
+    '<li><b>Ballaststoffe, etwa 30 g am Tag:</b> Gemüse, Obst, Vollkorn und Hülsenfrüchte halten länger satt.</li>'+
+    '<li><b>Trinken, etwa '+String(water).replace('.',',')+' Liter am Tag:</b> Das ist eine grobe Faustregel (33 ml pro kg). Bei Sport und Hitze darf es mehr sein. Wasser und ungesüßter Tee sind die beste Wahl.</li>'+
+    '<li><b>Flüssige Kalorien:</b> Säfte, Softdrinks und Alkohol sättigen kaum und werden schnell übersehen.</li>'+
+    '<li><b>Schlaf:</b> Wer wenig schläft, hat mehr Hunger auf Süßes und Fettiges. 7 bis 9 Stunden helfen dir beim Dranbleiben.</li>'+
+    '<li><b>Waage:</b> Dein Gewicht schwankt täglich um 1 bis 2 kg durch Wasser, Salz und Verdauung. Schau auf den Trend über 2 bis 3 Wochen.</li></ul>';
+  h+='<h3 class="know-h">Wie viele Mahlzeiten sind sinnvoll?</h3><ul class="know">'+
+    '<li><b>Für dich passend: '+n+' Mahlzeiten</b> '+(n===4?'(3 Hauptmahlzeiten und 1 Snack), weil deine Tagesmenge hoch ist und sich so leichter verteilen lässt.':'(Frühstück, Mittag, Abend), plus ein Snack, wenn du ihn brauchst.')+'</li>'+
+    '<li><b>Die Zahl ist zweitrangig:</b> Bei gleichen Kalorien macht es für den Fettverlust kaum einen Unterschied, ob du 2, 3 oder 5 Mal isst. Ein "angekurbelter Stoffwechsel" durch viele kleine Mahlzeiten ist ein Mythos.</li>'+
+    '<li><b>Eiweiß pro Mahlzeit:</b> Etwa 20 bis 40 g sind gut verwertbar. Bei '+fmt(gp)+' g am Tag sind das '+fmt(gp/3)+' g bei 3 Mahlzeiten oder '+fmt(gp/4)+' g bei 4 Mahlzeiten.</li>'+
+    '<li><b>Wähle, was zu deinem Alltag passt:</b> Wer bei langen Pausen Heißhunger bekommt, fährt mit einem Snack besser. Wer gern größere Portionen isst, kommt mit 2 bis 3 Mahlzeiten aus.</li></ul>';
+  el.innerHTML=h;
 }
 
 /* ---------- Profil: Vorlieben ---------- */
