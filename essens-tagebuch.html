@@ -369,6 +369,7 @@ a.pick{text-decoration:none;color:var(--ink)}
       <button class="round" data-act="nav-prev" aria-label="Zurück"><span data-ico="chevL" data-size="20"></span></button>
       <button class="round" data-act="nav-next" aria-label="Weiter"><span data-ico="chevR" data-size="20"></span></button>
     </div>
+    <button class="round" id="themeBtn" data-act="theme" aria-label="Darstellung wechseln"></button>
     <button class="round" id="profBtn" data-view="profil" aria-label="Profil" aria-pressed="false"><span data-ico="user" data-size="20"></span></button>
     </div>
   </header>
@@ -475,6 +476,8 @@ function skey(o){return JSON.stringify(Object.keys(o||{}).sort().map(function(k)
 var IC={
   ring:'<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 8.5 8.5"/>',
   chart:'<path d="M5 20v-8M12 20V5M19 20v-5"/>',
+  sun:'<circle cx="12" cy="12" r="4"/><path d="M12 2.5v2.2M12 19.3v2.2M2.5 12h2.2M19.3 12h2.2M5.3 5.3l1.6 1.6M17.1 17.1l1.6 1.6M5.3 18.7l1.6-1.6M17.1 6.9l1.6-1.6"/>',
+  moon:'<path d="M20 14.5A8.5 8.5 0 0 1 9.5 4a8.5 8.5 0 1 0 10.5 10.5z"/>',
   user:'<circle cx="12" cy="8" r="3.6"/><path d="M4.8 20a7.2 7.2 0 0 1 14.4 0"/>',
   plus:'<path d="M12 5v14M5 12h14"/>',
   chevL:'<path d="m15 5-7 7 7 7"/>',
@@ -488,6 +491,14 @@ var IC={
   plate:'<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/>'
 };
 function ico(n,s){s=s||20;return '<svg class="i" viewBox="0 0 24 24" width="'+s+'" height="'+s+'" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">'+IC[n]+'</svg>';}
+var THEME_KEY='et-theme';
+function themeGet(){try{return localStorage.getItem(THEME_KEY)||'';}catch(e){return '';}}
+function themeEff(){var t=document.documentElement.getAttribute('data-theme');if(t)return t;return window.matchMedia&&matchMedia('(prefers-color-scheme:dark)').matches?'dark':'light';}
+function themeApply(t){if(t)document.documentElement.setAttribute('data-theme',t);else document.documentElement.removeAttribute('data-theme');
+  var b=document.getElementById('themeBtn');if(b){var d=themeEff()==='dark';b.innerHTML=ico(d?'sun':'moon',20);b.setAttribute('aria-label',d?'Zum hellen Modus wechseln':'Zum dunklen Modus wechseln');}
+  var m=document.querySelector('meta[name=theme-color]');if(m)m.content=themeEff()==='dark'?'#0c0d11':'#f5f8f9';}
+function themeToggle(){var n=themeEff()==='dark'?'light':'dark';try{localStorage.setItem(THEME_KEY,n);}catch(e){}themeApply(n);}
+document.addEventListener('click',function(ev){if(ev.target.closest('#themeBtn'))themeToggle();});
 function hydrate(){document.querySelectorAll('[data-ico]').forEach(function(el){el.innerHTML=ico(el.dataset.ico,Number(el.dataset.size)||20);});}
 
 /* ---------- Zustand ---------- */
@@ -587,7 +598,7 @@ function setView(v,push){
 
 /* ---------- Start ---------- */
 async function boot(){
-  hydrate();S.fit=defaultFit();buildHero();
+  hydrate();themeApply(themeGet());S.fit=defaultFit();buildHero();
   S.weekStart=mondayOf(todayStr());
   renderSummary();renderMeals();renderWeek();renderBody();renderGoals();renderPrefs();renderTrainCard();renderAbout();
   setView((location.hash||'').slice(1),false);
